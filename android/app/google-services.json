@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "793854751604",
+    "firebase_url": "https://telugu-5-default-rtdb.firebaseio.com",
+    "project_id": "telugu-5",
+    "storage_bucket": "telugu-5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:793854751604:android:2f167cbec49ed176837221",
+        "android_client_info": {
+          "package_name": "com.example.telugu_samithi"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCvxYMM9bAXXSJpF-moIAGT3cNwCQQDU58"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

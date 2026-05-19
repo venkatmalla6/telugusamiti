@@ -1,0 +1,262 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../providers/auth_provider.dart';
+import '../../../providers/features/profile_providers.dart';
+
+class ProfileTab extends ConsumerWidget {
+  const ProfileTab({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final userAsync = ref.watch(currentUserProvider);
+
+    return Scaffold(
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            title: const Text('My Profile'),
+            pinned: true,
+            backgroundColor: AppColors.primaryMaroon,
+            foregroundColor: Colors.white,
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.logout_outlined),
+                tooltip: 'Sign Out',
+                onPressed: () => _confirmSignOut(context, ref),
+              ),
+            ],
+          ),
+          SliverToBoxAdapter(
+            child: userAsync.when(
+              data: (user) => Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    // Avatar
+                    const SizedBox(height: 8),
+                    CircleAvatar(
+                      radius: 48,
+                      backgroundColor: AppColors.primaryMaroon.withValues(alpha: 0.15),
+                      backgroundImage: (user?.photoUrl != null && user!.photoUrl!.isNotEmpty)
+                          ? CachedNetworkImageProvider(user.photoUrl!)
+                          : null,
+                      child: (user?.photoUrl == null || user!.photoUrl!.isEmpty)
+                          ? Text(
+                              user?.displayName?.isNotEmpty == true
+                                  ? user!.displayName![0].toUpperCase()
+                                  : 'U',
+                              style: const TextStyle(
+                                fontSize: 40,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primaryMaroon,
+                              ),
+                            )
+                          : null,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      user?.displayName ?? 'Member',
+                      style: Theme.of(context)
+                          .textTheme
+                          .headlineSmall
+                          ?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      user?.email ?? user?.phoneNumber ?? '',
+                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                    ),
+                    Container(
+                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryMaroon.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: AppColors.primaryMaroon.withValues(alpha: 0.3)),
+                      ),
+                      child: Text(
+                        user?.role.name.toUpperCase() ?? 'USER',
+                        style: const TextStyle(
+                          color: AppColors.primaryMaroon,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                          letterSpacing: 1,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    // Menu Sections
+                    _ProfileSection(
+                      title: 'Account',
+                      items: [
+                        _ProfileMenuItem(
+                          icon: Icons.edit_outlined,
+                          label: 'Edit Profile',
+                          onTap: () => context.push('/profile/edit'),
+                        ),
+                        _ProfileMenuItem(
+                          icon: Icons.family_restroom,
+                          label: 'Family Members',
+                          trailing: ref.watch(familyMembersProvider).maybeWhen(
+                                data: (members) => '${members.length} members',
+                                orElse: () => '...',
+                              ),
+                          onTap: () => context.push('/profile/family'),
+                        ),
+                        _ProfileMenuItem(
+                          icon: Icons.phone_outlined,
+                          label: 'Phone Number',
+                          trailing: user?.phoneNumber ?? 'Not set',
+                          onTap: () {},
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    _ProfileSection(
+                      title: 'Membership',
+                      items: [
+                        _ProfileMenuItem(
+                          icon: Icons.card_membership,
+                          label: 'My Subscription',
+                          onTap: () => context.push('/membership/history'),
+                        ),
+                        _ProfileMenuItem(
+                          icon: Icons.history,
+                          label: 'Payment History',
+                          onTap: () => context.push('/membership/payments'),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    _ProfileSection(
+                      title: 'More',
+                      items: [
+                        _ProfileMenuItem(
+                          icon: Icons.help_outline,
+                          label: 'Help & Support',
+                          onTap: () {},
+                        ),
+                        _ProfileMenuItem(
+                          icon: Icons.logout,
+                          label: 'Sign Out',
+                          textColor: AppColors.error,
+                          iconColor: AppColors.error,
+                          onTap: () => _confirmSignOut(context, ref),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 32),
+                  ],
+                ),
+              ),
+              loading: () => const Center(
+                heightFactor: 5,
+                child: CircularProgressIndicator(color: AppColors.primaryMaroon),
+              ),
+              error: (e, _) => Center(child: Text('Error: $e')),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmSignOut(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Sign Out'),
+        content: const Text('Are you sure you want to sign out?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+            onPressed: () {
+              Navigator.pop(context);
+              ref.read(authControllerProvider).signOut();
+            },
+            child: const Text('Sign Out'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProfileSection extends StatelessWidget {
+  final String title;
+  final List<_ProfileMenuItem> items;
+  const _ProfileSection({required this.title, required this.items});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 8),
+          child: Text(title,
+              style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.5)),
+        ),
+        Card(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          margin: EdgeInsets.zero,
+          child: Column(
+            children: items
+                .asMap()
+                .entries
+                .map(
+                  (entry) => Column(
+                    children: [
+                      entry.value,
+                      if (entry.key < items.length - 1)
+                        const Divider(height: 1, indent: 52),
+                    ],
+                  ),
+                )
+                .toList(),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ProfileMenuItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String? trailing;
+  final Color? iconColor;
+  final Color? textColor;
+  final VoidCallback onTap;
+
+  const _ProfileMenuItem({
+    required this.icon,
+    required this.label,
+    this.trailing,
+    this.iconColor,
+    this.textColor,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Icon(icon, color: iconColor ?? AppColors.primaryMaroon, size: 22),
+      title: Text(
+        label,
+        style: TextStyle(color: textColor, fontWeight: FontWeight.w500, fontSize: 15),
+      ),
+      trailing: trailing != null
+          ? Text(trailing!, style: const TextStyle(color: Colors.grey, fontSize: 13))
+          : const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
+      onTap: onTap,
+    );
+  }
+}
