@@ -10,6 +10,12 @@ class EventRegistrationModel {
   final DateTime registrationDate;
   final RegistrationStatus status;
   final int numberOfGuests;
+  final int numberOfAdults;
+  final int numberOfChildren;
+  final bool foodClaimed;
+  final DateTime? foodClaimedAt;
+  final bool attended;
+  final DateTime? attendedAt;
 
   EventRegistrationModel({
     required this.id,
@@ -19,6 +25,12 @@ class EventRegistrationModel {
     required this.registrationDate,
     this.status = RegistrationStatus.pending,
     this.numberOfGuests = 0,
+    this.numberOfAdults = 0,
+    this.numberOfChildren = 0,
+    this.foodClaimed = false,
+    this.foodClaimedAt,
+    this.attended = false,
+    this.attendedAt,
   });
 
   factory EventRegistrationModel.fromMap(Map<String, dynamic> map, String documentId) {
@@ -30,6 +42,12 @@ class EventRegistrationModel {
       registrationDate: timestampToDateTime(map['registrationDate']) ?? DateTime.now(),
       status: _parseStatus(map['status']),
       numberOfGuests: map['numberOfGuests'] ?? 0,
+      numberOfAdults: map['numberOfAdults'] ?? 0,
+      numberOfChildren: map['numberOfChildren'] ?? 0,
+      foodClaimed: map['foodClaimed'] ?? false,
+      foodClaimedAt: timestampToDateTime(map['foodClaimedAt']),
+      attended: map['attended'] ?? false,
+      attendedAt: timestampToDateTime(map['attendedAt']),
     );
   }
 
@@ -41,6 +59,12 @@ class EventRegistrationModel {
       'registrationDate': dateTimeToTimestamp(registrationDate),
       'status': status.name,
       'numberOfGuests': numberOfGuests,
+      'numberOfAdults': numberOfAdults,
+      'numberOfChildren': numberOfChildren,
+      'foodClaimed': foodClaimed,
+      'foodClaimedAt': dateTimeToTimestamp(foodClaimedAt),
+      'attended': attended,
+      'attendedAt': dateTimeToTimestamp(attendedAt),
     };
   }
 
@@ -60,6 +84,12 @@ class EventRegistrationModel {
     DateTime? registrationDate,
     RegistrationStatus? status,
     int? numberOfGuests,
+    int? numberOfAdults,
+    int? numberOfChildren,
+    bool? foodClaimed,
+    DateTime? foodClaimedAt,
+    bool? attended,
+    DateTime? attendedAt,
   }) {
     return EventRegistrationModel(
       id: id ?? this.id,
@@ -69,6 +99,12 @@ class EventRegistrationModel {
       registrationDate: registrationDate ?? this.registrationDate,
       status: status ?? this.status,
       numberOfGuests: numberOfGuests ?? this.numberOfGuests,
+      numberOfAdults: numberOfAdults ?? this.numberOfAdults,
+      numberOfChildren: numberOfChildren ?? this.numberOfChildren,
+      foodClaimed: foodClaimed ?? this.foodClaimed,
+      foodClaimedAt: foodClaimedAt ?? this.foodClaimedAt,
+      attended: attended ?? this.attended,
+      attendedAt: attendedAt ?? this.attendedAt,
     );
   }
 }

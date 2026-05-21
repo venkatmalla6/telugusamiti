@@ -10,6 +10,7 @@ class EventModel {
   final DateTime endDate;
   final bool isPublished;
   final int maxCapacity;
+  final bool hasFood;
 
   EventModel({
     required this.id,
@@ -21,6 +22,7 @@ class EventModel {
     required this.endDate,
     this.isPublished = false,
     this.maxCapacity = 0,
+    this.hasFood = false,
   });
 
   factory EventModel.fromMap(Map<String, dynamic> map, String documentId) {
@@ -34,6 +36,7 @@ class EventModel {
       endDate: timestampToDateTime(map['endDate']) ?? DateTime.now(),
       isPublished: map['isPublished'] ?? false,
       maxCapacity: map['maxCapacity'] ?? 0,
+      hasFood: map['hasFood'] ?? false,
     );
   }
 
@@ -47,6 +50,7 @@ class EventModel {
       'endDate': dateTimeToTimestamp(endDate),
       'isPublished': isPublished,
       'maxCapacity': maxCapacity,
+      'hasFood': hasFood,
     };
   }
 
@@ -60,6 +64,7 @@ class EventModel {
     DateTime? endDate,
     bool? isPublished,
     int? maxCapacity,
+    bool? hasFood,
   }) {
     return EventModel(
       id: id ?? this.id,
@@ -71,6 +76,7 @@ class EventModel {
       endDate: endDate ?? this.endDate,
       isPublished: isPublished ?? this.isPublished,
       maxCapacity: maxCapacity ?? this.maxCapacity,
+      hasFood: hasFood ?? this.hasFood,
     );
   }
 }

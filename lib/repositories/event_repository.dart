@@ -38,6 +38,21 @@ class EventRepository {
     return upcoming.take(limit).toList();
   }
 
+  Future<List<EventModel>> getTodayEvents() async {
+    final now = DateTime.now();
+    final todayStart = DateTime(now.year, now.month, now.day);
+    final todayEnd = todayStart.add(const Duration(days: 1));
+    
+    final all = await _eventService.getWhere(
+      field: 'isPublished',
+      isEqualTo: true,
+    );
+    return all.where((e) => 
+      (e.startDate.isAfter(todayStart) || e.startDate.isAtSameMomentAs(todayStart)) && 
+      e.startDate.isBefore(todayEnd)
+    ).toList()..sort((a, b) => a.startDate.compareTo(b.startDate));
+  }
+
   FirestoreService<EventRegistrationModel> _registrationService(String eventId) =>
       FirestoreService<EventRegistrationModel>(
         collectionPath: 'events/$eventId/registrations',
@@ -47,6 +62,35 @@ class EventRepository {
 
   Future<void> registerForEvent(String eventId, EventRegistrationModel registration) async {
     await _registrationService(eventId).set(registration.id, registration);
+  }
+
+  Future<EventRegistrationModel?> getUserRegistrationForEvent(String eventId, String userId) async {
+    final registrations = await _registrationService(eventId).getWhere(
+      field: 'userId',
+      isEqualTo: userId,
+    );
+    if (registrations.isNotEmpty) {
+      return registrations.first;
+    }
+    return null;
+  }
+
+  Future<EventRegistrationModel?> getRegistrationById(String eventId, String registrationId) async {
+    return await _registrationService(eventId).getById(registrationId);
+  }
+
+  Future<void> markFoodClaimed(String eventId, String registrationId) async {
+    await _registrationService(eventId).update(registrationId, {
+      'foodClaimed': true,
+      'foodClaimedAt': DateTime.now().toIso8601String(),
+    });
+  }
+
+  Future<void> markAttended(String eventId, String registrationId) async {
+    await _registrationService(eventId).update(registrationId, {
+      'attended': true,
+      'attendedAt': DateTime.now().toIso8601String(),
+    });
   }
 
   FirestoreService<FoodTokenModel> _foodTokenService(String eventId) =>

@@ -5,6 +5,9 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/features/profile_providers.dart';
+import '../../../providers/dashboard_providers.dart';
+import '../../../repositories/admin_repository.dart';
+import '../../../models/user_model.dart';
 
 class ProfileTab extends ConsumerWidget {
   const ProfileTab({super.key});
@@ -130,6 +133,21 @@ class ProfileTab extends ConsumerWidget {
                       ],
                     ),
                     const SizedBox(height: 16),
+                    if (user?.role == UserRole.admin || user?.role == UserRole.superAdmin) ...[
+                      _ProfileSection(
+                        title: 'Admin Tools',
+                        items: [
+                          _ProfileMenuItem(
+                            icon: Icons.delete_sweep_outlined,
+                            label: 'Clear All Test/Dummy Data',
+                            iconColor: AppColors.error,
+                            textColor: AppColors.error,
+                            onTap: () => _confirmClearTestData(context, ref),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                    ],
                     _ProfileSection(
                       title: 'More',
                       items: [
@@ -157,6 +175,75 @@ class ProfileTab extends ConsumerWidget {
               ),
               error: (e, _) => Center(child: Text('Error: $e')),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmClearTestData(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Clear All Test Data'),
+        content: const Text(
+          'This will permanently delete all events, announcements, gallery uploads, '
+          'payment records, and subscriptions from the database.\n\n'
+          'Are you absolutely sure you want to proceed?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+            onPressed: () async {
+              Navigator.pop(context);
+              
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (context) => const Center(
+                  child: Card(
+                      child: Padding(
+                        padding: EdgeInsets.all(24),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            CircularProgressIndicator(color: AppColors.primaryMaroon),
+                            SizedBox(height: 16),
+                            Text('Clearing Firestore collections...', style: TextStyle(fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                      ),
+                    ),
+                ),
+              );
+
+              try {
+                final adminRepo = ref.read(adminRepositoryProvider);
+                await adminRepo.clearAllTestData();
+                
+                if (context.mounted) {
+                  Navigator.pop(context); // Close loading dialog
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('All test database records cleared successfully!')),
+                  );
+                  ref.invalidate(upcomingEventsProvider);
+                  ref.invalidate(announcementsStreamProvider);
+                  ref.invalidate(galleryNotifierProvider);
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  Navigator.pop(context); // Close loading dialog
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error clearing data: $e'), backgroundColor: AppColors.error),
+                  );
+                }
+              }
+            },
+            child: const Text('Delete Everything'),
           ),
         ],
       ),

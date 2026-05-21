@@ -4,6 +4,7 @@ import '../models/announcement_model.dart';
 import '../models/event_model.dart';
 import '../models/subscription_model.dart';
 import '../models/gallery_model.dart';
+import '../models/notification_model.dart';
 import '../repositories/communication_repository.dart';
 import '../repositories/event_repository.dart';
 import '../repositories/payment_repository.dart';
@@ -33,14 +34,24 @@ final userSubscriptionProvider =
   final repo = ref.watch(paymentRepositoryProvider);
   final subs = await repo.getUserSubscriptions(user.uid);
   if (subs.isEmpty) return null;
-  // Return most recent active subscription
+  
+  // Return most recent active subscription, checking for expiry dynamically
   final active = subs.where((s) => s.status == SubscriptionStatus.active).toList();
   if (active.isNotEmpty) {
     active.sort((a, b) => b.endDate.compareTo(a.endDate));
-    return active.first;
+    final latestActive = active.first;
+    if (latestActive.endDate.isBefore(DateTime.now())) {
+      return latestActive.copyWith(status: SubscriptionStatus.expired);
+    }
+    return latestActive;
   }
+  
   subs.sort((a, b) => b.endDate.compareTo(a.endDate));
-  return subs.first;
+  final latestSub = subs.first;
+  if (latestSub.endDate.isBefore(DateTime.now())) {
+    return latestSub.copyWith(status: SubscriptionStatus.expired);
+  }
+  return latestSub;
 });
 
 // ── Gallery photos (latest 12) ───────────────────────────────────────────────
@@ -102,17 +113,17 @@ class GalleryNotifier extends Notifier<GalleryState> {
     state = state.copyWith(isLoading: true);
     try {
       final snapshot = await _service.getPaginated(
-        limit: 20,
-        orderByField: 'uploadedAt',
-        descending: true,
-        startAfterDocument: _lastDoc,
-      );
-      if (snapshot.docs.isNotEmpty) {
-        _lastDoc = snapshot.docs.last;
-        _items.addAll(snapshot.docs.map((d) => d.data()));
-      }
-      final hasMore = snapshot.docs.length == 20;
-      state = GalleryState(items: List.unmodifiable(_items), isLoading: false, hasMore: hasMore);
+  limit: 20,
+  orderByField: 'uploadedAt',
+  descending: true,
+  startAfterDocument: _lastDoc,
+);
+if (snapshot.docs.isNotEmpty) {
+  _lastDoc = snapshot.docs.last;
+  _items.addAll(snapshot.docs.map((d) => d.data()));
+}
+final hasMore = snapshot.docs.length == 20;
+state = GalleryState(items: List.unmodifiable(_items), isLoading: false, hasMore: hasMore);
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
     }
@@ -132,3 +143,37 @@ final galleryNotifierProvider =
     NotifierProvider<GalleryNotifier, GalleryState>(
   GalleryNotifier.new,
 );
+
+class _DashboardIndexNotifier extends Notifier<int> {
+  @override
+  int build() => 0;
+  void set(int index) => state = index;
+}
+
+final userDashboardIndexProvider =
+    NotifierProvider<_DashboardIndexNotifier, int>(
+  _DashboardIndexNotifier.new,
+);
+
+final userNotificationsProvider = StreamProvider.autoDispose<List<NotificationModel>>((ref) {
+  final user = ref.watch(currentUserProvider).value;
+  if (user == null) return Stream.value([]);
+  
+  final service = FirestoreService<NotificationModel>(
+    collectionPath: 'users/${user.uid}/notifications',
+    fromMap: NotificationModel.fromMap,
+    toMap: (item) => item.toMap(),
+  );
+  return service.streamAll().map((list) {
+    list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return list;
+  });
+});
+
+final unreadNotificationsCountProvider = Provider.autoDispose<int>((ref) {
+  final notificationsAsync = ref.watch(userNotificationsProvider);
+  return notificationsAsync.maybeWhen(
+    data: (list) => list.where((n) => !n.isRead).length,
+    orElse: () => 0,
+  );
+});

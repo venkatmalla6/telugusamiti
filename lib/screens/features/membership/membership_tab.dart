@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/skeleton_loader.dart';
 import '../../../core/widgets/empty_state_widget.dart';
@@ -44,6 +45,8 @@ class MembershipTab extends ConsumerWidget {
                         email: user?.email ?? '',
                         role: user?.role.name.toUpperCase() ?? 'USER',
                         uid: user?.uid ?? '',
+                        photoUrl: user?.photoUrl,
+                        subscription: subAsync.value,
                       ),
                       loading: () => const MembershipSkeleton(),
                       error: (_, __) => const SizedBox.shrink(),
@@ -78,27 +81,99 @@ class _DigitalIdCard extends StatelessWidget {
   final String email;
   final String role;
   final String uid;
+  final String? photoUrl;
+  final SubscriptionModel? subscription;
 
   const _DigitalIdCard({
     required this.name,
     required this.email,
     required this.role,
     required this.uid,
+    this.photoUrl,
+    this.subscription,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        gradient: const LinearGradient(
+    final hasActiveSub = subscription != null && subscription!.status == SubscriptionStatus.active;
+    
+    // Choose theme styling based on plan type
+    Gradient gradient;
+    Color textColor = Colors.white;
+    Color subTextColor = Colors.white70;
+    Color labelColor = Colors.white60;
+    Color valueColor = AppColors.primaryGold;
+    Color qrColor = AppColors.primaryMaroon;
+    Border? border;
+
+    if (!hasActiveSub) {
+      // Inactive or Expired -> Sleek dark grey/silver card
+      gradient = const LinearGradient(
+        colors: [Color(0xFF5A5A5A), Color(0xFF2C2C2C)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      );
+      valueColor = Colors.grey.shade400;
+      qrColor = Colors.black;
+    } else {
+      final planName = subscription!.planName.toLowerCase();
+      if (planName.contains('lifetime')) {
+        // Lifetime -> Premium Dark Gold theme
+        gradient = const LinearGradient(
+          colors: [Color(0xFF232323), Color(0xFF0F0F0F)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        );
+        border = Border.all(color: AppColors.primaryGold, width: 2);
+        textColor = Colors.white;
+        subTextColor = Colors.grey.shade300;
+        labelColor = Colors.grey.shade400;
+        valueColor = AppColors.primaryGold;
+        qrColor = AppColors.primaryGold;
+      } else if (planName.contains('family')) {
+        // Family -> Maroon theme
+        gradient = const LinearGradient(
           colors: [Color(0xFF800000), Color(0xFF4A0000)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-        ),
+        );
+        valueColor = AppColors.primaryGold;
+        qrColor = AppColors.primaryMaroon;
+      } else {
+        // Annual -> Rich blue theme
+        gradient = const LinearGradient(
+          colors: [Color(0xFF1565C0), Color(0xFF0D47A1)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        );
+        valueColor = Colors.cyan.shade300;
+        qrColor = const Color(0xFF0D47A1);
+      }
+    }
+
+    // Build functional QR Code payload
+    final String qrData = 'UID: $uid\n'
+        'Name: $name\n'
+        'Plan: ${subscription?.planName ?? "None"}\n'
+        'Status: ${subscription?.status.name.toUpperCase() ?? "INACTIVE"}\n'
+        'Expiry: ${subscription != null ? DateFormat.yMMMd().format(subscription!.endDate) : "N/A"}';
+
+    final String displayPlan = hasActiveSub 
+        ? subscription!.planName.toUpperCase() 
+        : (subscription != null && subscription!.status == SubscriptionStatus.expired)
+            ? 'EXPIRED'
+            : role;
+
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        gradient: gradient,
+        border: border,
         boxShadow: [
           BoxShadow(
-            color: AppColors.primaryMaroon.withValues(alpha: 0.4),
+            color: (hasActiveSub && subscription!.planName.toLowerCase().contains('lifetime'))
+                ? AppColors.primaryGold.withValues(alpha: 0.15)
+                : AppColors.primaryMaroon.withValues(alpha: 0.3),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -114,54 +189,61 @@ class _DigitalIdCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Telugu Samiti',
                       style: TextStyle(
-                        color: AppColors.primaryGold,
+                        color: (hasActiveSub && subscription!.planName.toLowerCase().contains('lifetime'))
+                            ? AppColors.primaryGold
+                            : Colors.white,
                         fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                        letterSpacing: 1,
+                        fontSize: 20,
+                        letterSpacing: 1.2,
                       ),
                     ),
-                    const Text(
+                    Text(
                       'Tamil Nadu',
-                      style: TextStyle(color: Colors.white60, fontSize: 13),
+                      style: TextStyle(color: subTextColor, fontSize: 13, fontWeight: FontWeight.w500),
                     ),
                   ],
                 ),
               ),
               Container(
-                width: 56,
-                height: 56,
+                width: 60,
+                height: 60,
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: QrImageView(
-                  data: uid,
+                  data: qrData,
                   version: QrVersions.auto,
-                  eyeStyle: const QrEyeStyle(eyeShape: QrEyeShape.square, color: AppColors.primaryMaroon),
-                  dataModuleStyle: const QrDataModuleStyle(dataModuleShape: QrDataModuleShape.square, color: AppColors.primaryMaroon),
+                  eyeStyle: QrEyeStyle(eyeShape: QrEyeShape.square, color: qrColor),
+                  dataModuleStyle: QrDataModuleStyle(dataModuleShape: QrDataModuleShape.square, color: qrColor),
                   padding: EdgeInsets.zero,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
           Row(
             children: [
               CircleAvatar(
-                radius: 28,
+                radius: 30,
                 backgroundColor: Colors.white.withValues(alpha: 0.15),
-                child: Text(
-                  name.isNotEmpty ? name[0].toUpperCase() : 'M',
-                  style: const TextStyle(
-                    color: AppColors.primaryGold,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                backgroundImage: (photoUrl != null && photoUrl!.isNotEmpty)
+                    ? CachedNetworkImageProvider(photoUrl!)
+                    : null,
+                child: (photoUrl == null || photoUrl!.isEmpty)
+                    ? Text(
+                        name.isNotEmpty ? name[0].toUpperCase() : 'M',
+                        style: TextStyle(
+                          color: valueColor,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      )
+                    : null,
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -170,8 +252,8 @@ class _DigitalIdCard extends StatelessWidget {
                   children: [
                     Text(
                       name,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: textColor,
                         fontWeight: FontWeight.bold,
                         fontSize: 18,
                       ),
@@ -179,7 +261,7 @@ class _DigitalIdCard extends StatelessWidget {
                     ),
                     Text(
                       email,
-                      style: const TextStyle(color: Colors.white60, fontSize: 12),
+                      style: TextStyle(color: subTextColor, fontSize: 13),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],
@@ -187,14 +269,33 @@ class _DigitalIdCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _CardField(label: 'Member Type', value: role),
-              _CardField(label: 'Member ID', value: uid.length > 8 ? uid.substring(0, 8).toUpperCase() : uid.toUpperCase()),
+              _CardField(
+                label: 'Member Type',
+                value: displayPlan,
+                labelColor: labelColor,
+                valueColor: (subscription?.status == SubscriptionStatus.expired)
+                    ? AppColors.error
+                    : valueColor,
+              ),
+              _CardField(
+                label: 'Member ID',
+                value: uid.length > 8 ? uid.substring(0, 8).toUpperCase() : uid.toUpperCase(),
+                labelColor: labelColor,
+                valueColor: valueColor,
+              ),
             ],
           ),
+          if (hasActiveSub) ...[
+            const SizedBox(height: 12),
+            Text(
+              'Valid Until: ${DateFormat('dd MMM yyyy').format(subscription!.endDate)}',
+              style: TextStyle(color: subTextColor, fontSize: 11, fontWeight: FontWeight.bold),
+            ),
+          ],
         ],
       ),
     );
@@ -204,18 +305,31 @@ class _DigitalIdCard extends StatelessWidget {
 class _CardField extends StatelessWidget {
   final String label;
   final String value;
-  const _CardField({required this.label, required this.value});
+  final Color labelColor;
+  final Color valueColor;
+
+  const _CardField({
+    required this.label,
+    required this.value,
+    required this.labelColor,
+    required this.valueColor,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(color: Colors.white54, fontSize: 11)),
+        Text(label, style: TextStyle(color: labelColor, fontSize: 11)),
         const SizedBox(height: 2),
-        Text(value,
-            style: const TextStyle(
-                color: AppColors.primaryGold, fontWeight: FontWeight.bold, fontSize: 13)),
+        Text(
+          value,
+          style: TextStyle(
+            color: valueColor,
+            fontWeight: FontWeight.bold,
+            fontSize: 13,
+          ),
+        ),
       ],
     );
   }

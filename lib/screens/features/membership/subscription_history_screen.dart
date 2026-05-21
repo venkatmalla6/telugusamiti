@@ -4,18 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/empty_state_widget.dart';
 import '../../../models/subscription_model.dart';
-import '../../../repositories/payment_repository.dart';
-import '../../../providers/auth_provider.dart';
-
-// Provider just for this screen
-final subscriptionHistoryProvider = FutureProvider.autoDispose<List<SubscriptionModel>>((ref) async {
-  final userAsync = ref.watch(currentUserProvider);
-  final user = userAsync.value;
-  if (user == null) return [];
-  
-  final repo = ref.watch(paymentRepositoryProvider);
-  return repo.getUserSubscriptions(user.uid);
-});
+import '../../../providers/features/membership_providers.dart';
 
 class SubscriptionHistoryScreen extends ConsumerWidget {
   const SubscriptionHistoryScreen({super.key});

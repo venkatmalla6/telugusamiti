@@ -6,6 +6,8 @@ import '../../../core/widgets/skeleton_loader.dart';
 import '../../../core/widgets/empty_state_widget.dart';
 import '../../../models/event_model.dart';
 import '../../../providers/dashboard_providers.dart';
+import '../../../providers/event_providers.dart';
+import 'package:go_router/go_router.dart';
 
 class EventsTab extends ConsumerStatefulWidget {
   const EventsTab({super.key});
@@ -82,12 +84,13 @@ class _EventsTabState extends ConsumerState<EventsTab> {
   }
 }
 
-class _EventListTile extends StatelessWidget {
+class _EventListTile extends ConsumerWidget {
   final EventModel event;
   const _EventListTile({required this.event});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final registrationAsync = ref.watch(eventRegistrationProvider(event.id));
     final dateStr = DateFormat('EEE, dd MMM • hh:mm a').format(event.startDate);
 
     return Card(
@@ -96,7 +99,7 @@ class _EventListTile extends StatelessWidget {
       elevation: 2,
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
-        onTap: () {},
+        onTap: () => context.push('/events/${event.id}'),
         child: Row(
           children: [
             // Date block on left
@@ -174,6 +177,22 @@ class _EventListTile extends StatelessWidget {
                         ),
                       ),
                     ],
+                    if (event.hasFood) ...[
+                      const SizedBox(height: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.shade50,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.orange.shade200),
+                        ),
+                        child: Text(
+                          '🍽️ Food Included',
+                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.orange.shade800),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 12),
                   ],
                 ),
               ),

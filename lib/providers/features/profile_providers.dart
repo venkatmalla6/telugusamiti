@@ -105,6 +105,17 @@ class ProfileEditNotifier extends Notifier<ProfileEditState> {
       state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
+
+  Future<void> removeFamilyMember(String uid, String memberId) async {
+    state = state.copyWith(isLoading: true, error: null, isSuccess: false);
+    try {
+      await _userRepo.deleteFamilyMember(uid, memberId);
+      ref.invalidate(familyMembersProvider);
+      state = state.copyWith(isLoading: false, isSuccess: true);
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+    }
+  }
 }
 
 final profileEditNotifierProvider = NotifierProvider<ProfileEditNotifier, ProfileEditState>(

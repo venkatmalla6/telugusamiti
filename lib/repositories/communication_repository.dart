@@ -34,4 +34,12 @@ class CommunicationRepository {
   Future<void> sendNotification(String uid, NotificationModel notification) async {
     await _notificationService(uid).set(notification.id, notification);
   }
+
+  Future<void> markNotificationAsRead(String uid, String notificationId) async {
+    await _notificationService(uid).update(notificationId, {'isRead': true});
+  }
+
+  Future<void> clearAllNotifications(String uid) async {
+    await _notificationService(uid).clearCollection();
+  }
 }

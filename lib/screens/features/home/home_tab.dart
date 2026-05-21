@@ -10,6 +10,7 @@ import '../../../models/announcement_model.dart';
 import '../../../models/subscription_model.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/dashboard_providers.dart';
+import '../../../providers/event_providers.dart';
 
 class HomeTab extends ConsumerWidget {
   const HomeTab({super.key});
@@ -110,9 +111,42 @@ class HomeTab extends ConsumerWidget {
                           color: Colors.white.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: IconButton(
-                          icon: const Icon(Icons.notifications_outlined, color: AppColors.primaryGold),
-                          onPressed: () {},
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.notifications_outlined, color: AppColors.primaryGold),
+                              onPressed: () => context.push('/notifications'),
+                            ),
+                            if (ref.watch(unreadNotificationsCountProvider) > 0)
+                              Positioned(
+                                right: 6,
+                                top: 6,
+                                child: Container(
+                                  padding: const EdgeInsets.all(2),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primaryMaroon,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.white, width: 1.5),
+                                  ),
+                                  constraints: const BoxConstraints(
+                                    minWidth: 16,
+                                    minHeight: 16,
+                                  ),
+                                  child: Text(
+                                    ref.watch(unreadNotificationsCountProvider) > 9
+                                        ? '9+'
+                                        : '${ref.watch(unreadNotificationsCountProvider)}',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
                       ),
                     ],
@@ -215,7 +249,7 @@ class _MembershipBanner extends ConsumerWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
-                  onPressed: () {},
+                  onPressed: () => context.push('/membership/plans'),
                   child: const Text('Renew', style: TextStyle(fontWeight: FontWeight.bold)),
                 ),
             ],
@@ -253,14 +287,29 @@ class _QuickAction {
   const _QuickAction({required this.icon, required this.label, required this.color});
 }
 
-class _QuickActionButton extends StatelessWidget {
+class _QuickActionButton extends ConsumerWidget {
   final _QuickAction action;
   const _QuickActionButton({required this.action});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return GestureDetector(
-      onTap: () {},
+      onTap: () {
+        switch (action.label) {
+          case 'Events':
+            ref.read(userDashboardIndexProvider.notifier).set(1);
+            break;
+          case 'Family':
+            context.push('/profile/family');
+            break;
+          case 'Pay Dues':
+            context.push('/membership/plans');
+            break;
+          case 'Gallery':
+            ref.read(userDashboardIndexProvider.notifier).set(3);
+            break;
+        }
+      },
       child: Column(
         children: [
           Container(
@@ -348,12 +397,13 @@ class _UpcomingEventsRow extends ConsumerWidget {
   }
 }
 
-class _EventCard extends StatelessWidget {
+class _EventCard extends ConsumerWidget {
   final EventModel event;
   const _EventCard({required this.event});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final registrationAsync = ref.watch(eventRegistrationProvider(event.id));
     final dateStr = DateFormat.MMMd().format(event.startDate);
     final dayStr = DateFormat.EEEE().format(event.startDate);
 
@@ -369,7 +419,7 @@ class _EventCard extends StatelessWidget {
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        onTap: () {},
+        onTap: () => context.push('/events/${event.id}'),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -389,6 +439,12 @@ class _EventCard extends StatelessWidget {
                   children: [
                     Text(event.title, maxLines: 2, overflow: TextOverflow.ellipsis,
                         style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                    if (event.hasFood)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text('🍽️ Food Included', style: TextStyle(fontSize: 10, color: Colors.orange.shade800, fontWeight: FontWeight.bold)),
+                      ),
+                    const Spacer(),
                     const Spacer(),
                     Row(
                       children: [

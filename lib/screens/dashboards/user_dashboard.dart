@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_colors.dart';
+import '../../providers/dashboard_providers.dart';
 import '../features/home/home_tab.dart';
 import '../features/events/events_tab.dart';
 import '../features/membership/membership_tab.dart';
@@ -17,7 +18,6 @@ class UserDashboard extends ConsumerStatefulWidget {
 
 class _UserDashboardState extends ConsumerState<UserDashboard>
     with SingleTickerProviderStateMixin {
-  int _currentIndex = 0;
   late AnimationController _animController;
   DateTime? _lastBackPressed;
 
@@ -53,15 +53,17 @@ class _UserDashboardState extends ConsumerState<UserDashboard>
   }
 
   void _onTabTapped(int index) {
-    if (index == _currentIndex) return;
-    setState(() => _currentIndex = index);
+    final currentIndex = ref.read(userDashboardIndexProvider);
+    if (index == currentIndex) return;
+    ref.read(userDashboardIndexProvider.notifier).set(index);
     _animController.forward(from: 0);
   }
 
   Future<bool> _onBackPressed() async {
+    final currentIndex = ref.read(userDashboardIndexProvider);
     // If not on Home tab — navigate back to Home tab
-    if (_currentIndex != 0) {
-      setState(() => _currentIndex = 0);
+    if (currentIndex != 0) {
+      ref.read(userDashboardIndexProvider.notifier).set(0);
       return false;
     }
     // On Home tab — double-back-to-exit
@@ -85,6 +87,7 @@ class _UserDashboardState extends ConsumerState<UserDashboard>
 
   @override
   Widget build(BuildContext context) {
+    final currentIndex = ref.watch(userDashboardIndexProvider);
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
@@ -98,16 +101,16 @@ class _UserDashboardState extends ConsumerState<UserDashboard>
             child: child,
           ),
           child: KeyedSubtree(
-            key: ValueKey(_currentIndex),
-            child: _pages[_currentIndex],
+            key: ValueKey(currentIndex),
+            child: _pages[currentIndex],
           ),
         ),
-        bottomNavigationBar: _buildBottomNav(context),
+        bottomNavigationBar: _buildBottomNav(context, currentIndex),
       ),
     );
   }
 
-  Widget _buildBottomNav(BuildContext context) {
+  Widget _buildBottomNav(BuildContext context, int currentIndex) {
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
@@ -127,7 +130,7 @@ class _UserDashboardState extends ConsumerState<UserDashboard>
             children: _navItems.asMap().entries.map((entry) {
               final index = entry.key;
               final item = entry.value;
-              final isActive = _currentIndex == index;
+              final isActive = currentIndex == index;
 
               return GestureDetector(
                 onTap: () => _onTabTapped(index),

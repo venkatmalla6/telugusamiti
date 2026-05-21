@@ -35,6 +35,13 @@ class FirestoreService<T> {
     await _collection.doc(id).delete();
   }
 
+  Future<void> clearCollection() async {
+    final snapshots = await _collection.get();
+    for (final doc in snapshots.docs) {
+      await doc.reference.delete();
+    }
+  }
+
   Future<T?> getById(String id, {Source source = Source.serverAndCache}) async {
     final docSnapshot = await _collection.doc(id).get(GetOptions(source: source));
     return docSnapshot.data();

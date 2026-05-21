@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/empty_state_widget.dart';
 import '../../../providers/features/profile_providers.dart';
+import '../../../providers/auth_provider.dart';
 
 class FamilyMembersScreen extends ConsumerWidget {
   const FamilyMembersScreen({super.key});
@@ -54,7 +55,9 @@ class FamilyMembersScreen extends ConsumerWidget {
                   trailing: IconButton(
                     icon: const Icon(Icons.delete_outline, color: AppColors.error),
                     onPressed: () {
-                      // TODO: Implement delete
+                      final currentUser = ref.read(currentUserProvider).value;
+                      if (currentUser == null) return;
+                      _confirmDelete(context, ref, currentUser.uid, member.id, member.name);
                     },
                   ),
                 ),
@@ -69,6 +72,36 @@ class FamilyMembersScreen extends ConsumerWidget {
         onPressed: () => context.push('/profile/family/add'),
         icon: const Icon(Icons.add),
         label: const Text('Add Member'),
+      ),
+    );
+  }
+
+  void _confirmDelete(BuildContext context, WidgetRef ref, String uid, String memberId, String name) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Family Member'),
+        content: Text('Are you sure you want to remove $name?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+            onPressed: () {
+              Navigator.pop(context);
+              ref.read(profileEditNotifierProvider.notifier).removeFamilyMember(uid, memberId);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Removing $name...'),
+                  duration: const Duration(seconds: 1),
+                ),
+              );
+            },
+            child: const Text('Remove'),
+          ),
+        ],
       ),
     );
   }

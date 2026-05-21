@@ -47,6 +47,10 @@ class UserRepository {
     await _familyMemberService(uid).set(member.id, member);
   }
 
+  Future<void> deleteFamilyMember(String uid, String memberId) async {
+    await _familyMemberService(uid).delete(memberId);
+  }
+
   Future<List<FamilyMemberModel>> getFamilyMembers(String uid) =>
       _familyMemberService(uid).getAll();
 }

@@ -22,7 +22,7 @@ class EmptyStateWidget extends StatelessWidget {
     final theme = Theme.of(context);
     return Center(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 48),
+        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
