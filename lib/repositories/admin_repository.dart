@@ -168,15 +168,37 @@ class AdminRepository {
   }) async {
     final users = await _userService.getAll();
     final batch = FirebaseFirestore.instance.batch();
+    
+    // Save to global/root notifications
+    final globalRef = FirebaseFirestore.instance.collection('notifications').doc();
+    batch.set(globalRef, {
+      'title': title,
+      'body': body,
+      'isRead': false,
+      'createdAt': FieldValue.serverTimestamp(),
+      'type': NotificationType.adminBroadcast.name,
+      'topic': 'all_users',
+      'data': {'sentBy': sentBy},
+    });
+
     for (final user in users) {
-      final ref = FirebaseFirestore.instance.collection('notifications').doc();
+      final ref = FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('notifications')
+          .doc();
       batch.set(ref, {
-        'userId': user.uid,
         'title': title,
         'body': body,
         'isRead': false,
         'createdAt': FieldValue.serverTimestamp(),
-        'sentBy': sentBy,
+        'type': NotificationType.adminBroadcast.name,
+        'topic': 'all_users',
+        'targetUid': user.uid,
+        'data': {
+          'sentBy': sentBy,
+          'globalNotificationId': globalRef.id,
+        },
       });
     }
     await batch.commit();

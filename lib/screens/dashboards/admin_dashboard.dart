@@ -9,6 +9,7 @@ import 'admin/tabs/admin_home_tab.dart';
 import 'admin/tabs/admin_members_tab.dart';
 import 'admin/tabs/admin_events_tab.dart';
 import 'admin/tabs/admin_settings_tab.dart';
+import '../features/gallery/gallery_tab.dart';
 
 class AdminDashboard extends ConsumerStatefulWidget {
   const AdminDashboard({super.key});
@@ -24,14 +25,16 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
     AdminHomeTab(),
     AdminMembersTab(),
     AdminEventsTab(),
+    GalleryTab(),
     AdminSettingsTab(),
   ];
 
-  final _tabLabels = ['Home', 'Members', 'Events', 'Settings'];
+  final _tabLabels = ['Home', 'Members', 'Events', 'Gallery', 'Settings'];
   final _tabIcons = [
     Icons.dashboard_rounded,
     Icons.people_rounded,
     Icons.event_rounded,
+    Icons.photo_library_rounded,
     Icons.settings_rounded,
   ];
 

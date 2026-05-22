@@ -4,6 +4,8 @@ import '../models/announcement_model.dart';
 import '../models/event_model.dart';
 import '../models/subscription_model.dart';
 import '../models/gallery_model.dart';
+import '../models/album_model.dart';
+import '../models/media_item_model.dart';
 import '../models/notification_model.dart';
 import '../repositories/communication_repository.dart';
 import '../repositories/event_repository.dart';
@@ -54,17 +56,17 @@ final userSubscriptionProvider =
   return latestSub;
 });
 
-// ── Gallery photos (latest 12) ───────────────────────────────────────────────
+// ── Gallery Albums (latest 12) ───────────────────────────────────────────────
 final galleryPreviewProvider =
-    FutureProvider.autoDispose<List<GalleryModel>>((ref) async {
-  final service = FirestoreService<GalleryModel>(
-    collectionPath: 'gallery',
-    fromMap: GalleryModel.fromMap,
+    FutureProvider.autoDispose<List<Album>>((ref) async {
+  final service = FirestoreService<Album>(
+    collectionPath: 'gallery_albums',
+    fromMap: (data, id) => Album.fromMap(id, data),
     toMap: (item) => item.toMap(),
   );
   final snapshot = await service.getPaginated(
     limit: 12,
-    orderByField: 'uploadedAt',
+    orderByField: 'createdAt',
     descending: true,
   );
   return snapshot.docs.map((d) => d.data()).toList();
@@ -72,7 +74,7 @@ final galleryPreviewProvider =
 
 // ── Full gallery (paginated via Notifier) ─────────────────────────────────────
 class GalleryState {
-  final List<GalleryModel> items;
+  final List<Album> items;
   final bool isLoading;
   final bool hasMore;
   final String? error;
@@ -82,7 +84,7 @@ class GalleryState {
     this.hasMore = true,
     this.error,
   });
-  GalleryState copyWith({List<GalleryModel>? items, bool? isLoading, bool? hasMore, String? error}) =>
+  GalleryState copyWith({List<Album>? items, bool? isLoading, bool? hasMore, String? error}) =>
       GalleryState(
         items: items ?? this.items,
         isLoading: isLoading ?? this.isLoading,
@@ -92,15 +94,15 @@ class GalleryState {
 }
 
 class GalleryNotifier extends Notifier<GalleryState> {
-  final FirestoreService<GalleryModel> _service = FirestoreService<GalleryModel>(
-    collectionPath: 'gallery',
-    fromMap: GalleryModel.fromMap,
+  final FirestoreService<Album> _service = FirestoreService<Album>(
+    collectionPath: 'gallery_albums',
+    fromMap: (data, id) => Album.fromMap(id, data),
     toMap: (item) => item.toMap(),
   );
 
   // We track the raw snapshot to use startAfterDocument correctly
-  QueryDocumentSnapshot<GalleryModel>? _lastDoc;
-  final List<GalleryModel> _items = [];
+  QueryDocumentSnapshot<Album>? _lastDoc;
+  final List<Album> _items = [];
 
   @override
   GalleryState build() {
@@ -114,7 +116,7 @@ class GalleryNotifier extends Notifier<GalleryState> {
     try {
       final snapshot = await _service.getPaginated(
   limit: 20,
-  orderByField: 'uploadedAt',
+  orderByField: 'createdAt',
   descending: true,
   startAfterDocument: _lastDoc,
 );
@@ -143,6 +145,19 @@ final galleryNotifierProvider =
     NotifierProvider<GalleryNotifier, GalleryState>(
   GalleryNotifier.new,
 );
+
+// ── Album Media Provider ──────────────────────────────────────────────────
+final albumMediaProvider = StreamProvider.family.autoDispose<List<MediaItem>, String>((ref, albumId) {
+  final service = FirestoreService<MediaItem>(
+    collectionPath: 'gallery_albums/$albumId/media',
+    fromMap: (data, id) => MediaItem.fromMap(id, data),
+    toMap: (item) => item.toMap(),
+  );
+  return service.streamAll().map((items) {
+    items.sort((a, b) => b.uploadedAt.compareTo(a.uploadedAt));
+    return items;
+  });
+});
 
 class _DashboardIndexNotifier extends Notifier<int> {
   @override

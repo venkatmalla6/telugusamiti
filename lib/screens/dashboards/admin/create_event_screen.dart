@@ -6,6 +6,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../models/event_model.dart';
 import '../../../providers/event_providers.dart';
 import '../../../repositories/event_repository.dart';
+import '../../../providers/notification_providers.dart';
 
 class CreateEventScreen extends ConsumerStatefulWidget {
   final String? eventId;
@@ -27,6 +28,7 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
   DateTime _startDate = DateTime.now().add(const Duration(days: 7));
   DateTime _endDate = DateTime.now().add(const Duration(days: 7, hours: 2));
   bool _isPublished = false;
+  bool _wasInitiallyPublished = false;
   bool _hasFood = false;
 
   bool _isInit = false;
@@ -61,6 +63,7 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
     _startDate = event.startDate;
     _endDate = event.endDate;
     _isPublished = event.isPublished;
+    _wasInitiallyPublished = event.isPublished;
     _hasFood = event.hasFood;
     _isInit = true;
   }
@@ -116,10 +119,28 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
       );
 
       final repo = ref.read(eventRepositoryProvider);
+      String savedEventId = event.id;
       if (event.id.isEmpty) {
-        await repo.createEvent(event);
+        savedEventId = await repo.createEvent(event);
       } else {
         await repo.updateEvent(event.id, event.toMap());
+      }
+
+      // If the event is now published and wasn't published initially, send out notifications
+      if (_isPublished && !_wasInitiallyPublished) {
+        final publishedEvent = EventModel(
+          id: savedEventId,
+          title: event.title,
+          description: event.description,
+          location: event.location,
+          imageUrl: event.imageUrl,
+          maxCapacity: event.maxCapacity,
+          startDate: event.startDate,
+          endDate: event.endDate,
+          isPublished: true,
+          hasFood: event.hasFood,
+        );
+        await ref.read(notificationWorkflowServiceProvider).sendNewEventNotification(publishedEvent);
       }
       
       if (mounted) {

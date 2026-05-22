@@ -79,6 +79,10 @@ class EventRepository {
     return await _registrationService(eventId).getById(registrationId);
   }
 
+  Future<List<EventRegistrationModel>> getEventRegistrations(String eventId) async {
+    return await _registrationService(eventId).getAll();
+  }
+
   Future<void> markFoodClaimed(String eventId, String registrationId) async {
     await _registrationService(eventId).update(registrationId, {
       'foodClaimed': true,

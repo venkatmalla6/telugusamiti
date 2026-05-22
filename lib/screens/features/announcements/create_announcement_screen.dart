@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../models/announcement_model.dart';
 import '../../../../providers/auth_provider.dart';
 import '../../../../repositories/communication_repository.dart';
+import '../../../../providers/notification_providers.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../../core/widgets/custom_text_field.dart';
 import '../../../../core/widgets/snackbar_utils.dart';
@@ -39,7 +40,17 @@ class _CreateAnnouncementScreenState extends ConsumerState<CreateAnnouncementScr
       );
 
       final repo = ref.read(communicationRepositoryProvider);
-      await repo.postAnnouncement(announcement);
+      final docId = await repo.postAnnouncement(announcement);
+
+      // Trigger the workflow to notify all users of the new announcement
+      final announcementWithId = AnnouncementModel(
+        id: docId,
+        title: announcement.title,
+        message: announcement.message,
+        createdAt: announcement.createdAt,
+        authorId: announcement.authorId,
+      );
+      await ref.read(notificationWorkflowServiceProvider).sendAnnouncementNotification(announcementWithId);
 
       if (mounted) {
         SnackbarUtils.showSuccess(context, 'Announcement posted successfully!');

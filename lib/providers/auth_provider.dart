@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../models/user_model.dart';
 import '../repositories/auth_repository.dart';
 import '../repositories/user_repository.dart';
+import 'notification_providers.dart';
 
 final authStateProvider = StreamProvider<User?>((ref) {
   return ref.watch(authRepositoryProvider).authStateChanges;
@@ -29,19 +30,20 @@ final currentUserProvider = FutureProvider<UserModel?>((ref) async {
   return user;
 });
 
-// Auth Controller for triggering actions
 final authControllerProvider = Provider<AuthController>((ref) {
   return AuthController(
+    ref,
     ref.watch(authRepositoryProvider),
     ref.watch(userRepositoryProvider),
   );
 });
 
 class AuthController {
+  final Ref _ref;
   final AuthRepository _authRepository;
   final UserRepository _userRepository;
 
-  AuthController(this._authRepository, this._userRepository);
+  AuthController(this._ref, this._authRepository, this._userRepository);
 
   Future<void> signInWithEmail(String email, String password) async {
     await _authRepository.signInWithEmail(email, password);
@@ -52,6 +54,14 @@ class AuthController {
   }
 
   Future<void> signOut() async {
+    try {
+      final user = _ref.read(currentUserProvider).value;
+      if (user != null) {
+        await _ref.read(fcmServiceProvider).unregisterDevice(user.uid);
+      }
+    } catch (_) {
+      // Ignore any errors unregistering device on signOut
+    }
     await _authRepository.signOut();
   }
 
@@ -87,4 +97,7 @@ class AuthController {
     );
     await _authRepository.signInWithCredential(credential);
   }
+}
+extension UserRoleExtensions on UserModel {
+  bool get isAdminOrSuperAdmin => role == UserRole.admin || role == UserRole.superAdmin;
 }

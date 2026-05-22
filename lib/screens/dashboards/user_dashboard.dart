@@ -113,10 +113,10 @@ class _UserDashboardState extends ConsumerState<UserDashboard>
   Widget _buildBottomNav(BuildContext context, int currentIndex) {
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
+        color: AppColors.primaryMaroon,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
+            color: Colors.black.withValues(alpha: 0.15),
             blurRadius: 16,
             offset: const Offset(0, -4),
           ),
@@ -144,7 +144,7 @@ class _UserDashboardState extends ConsumerState<UserDashboard>
                   ),
                   decoration: BoxDecoration(
                     color: isActive
-                        ? AppColors.primaryMaroon.withValues(alpha: 0.12)
+                        ? AppColors.primaryGold.withValues(alpha: 0.2)
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(24),
                   ),
@@ -154,8 +154,8 @@ class _UserDashboardState extends ConsumerState<UserDashboard>
                       Icon(
                         isActive ? item.activeIcon : item.icon,
                         color: isActive
-                            ? AppColors.primaryMaroon
-                            : Colors.grey,
+                            ? AppColors.primaryGold
+                            : Colors.white70,
                         size: 24,
                       ),
                       if (isActive) ...[
@@ -163,7 +163,7 @@ class _UserDashboardState extends ConsumerState<UserDashboard>
                         Text(
                           item.label,
                           style: const TextStyle(
-                            color: AppColors.primaryMaroon,
+                            color: AppColors.primaryGold,
                             fontWeight: FontWeight.bold,
                             fontSize: 13,
                           ),

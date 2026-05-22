@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/skeleton_loader.dart';
 import '../../../core/widgets/empty_state_widget.dart';
-import '../../../models/gallery_model.dart';
+import '../../../models/album_model.dart';
 import '../../../providers/dashboard_providers.dart';
+import '../../../providers/auth_provider.dart';
 
 class GalleryTab extends ConsumerWidget {
   const GalleryTab({super.key});
@@ -13,6 +15,8 @@ class GalleryTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final galleryState = ref.watch(galleryNotifierProvider);
     final notifier = ref.read(galleryNotifierProvider.notifier);
+    final user = ref.watch(currentUserProvider).value;
+    final canManage = user?.isAdminOrSuperAdmin ?? false;
 
     return Scaffold(
       body: RefreshIndicator(
@@ -22,7 +26,7 @@ class GalleryTab extends ConsumerWidget {
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             const SliverAppBar(
-              title: Text('Gallery'),
+              title: Text('Gallery Albums'),
               pinned: true,
               backgroundColor: AppColors.primaryMaroon,
               foregroundColor: Colors.white,
@@ -36,9 +40,10 @@ class GalleryTab extends ConsumerWidget {
                     childCount: 9,
                   ),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    crossAxisSpacing: 8,
-                    mainAxisSpacing: 8,
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    childAspectRatio: 0.8,
                   ),
                 ),
               )
@@ -55,9 +60,9 @@ class GalleryTab extends ConsumerWidget {
             else if (galleryState.items.isEmpty)
               SliverToBoxAdapter(
                 child: EmptyStateWidget(
-                  icon: Icons.photo_camera_back_outlined,
-                  title: 'Gallery is Empty',
-                  subtitle: 'Event photos will appear here after they are uploaded by the Samiti.',
+                  icon: Icons.photo_album_outlined,
+                  title: 'No Albums Yet',
+                  subtitle: 'Event albums will appear here once they are created by the Samiti.',
                   actionLabel: 'Refresh',
                   onAction: () => notifier.refresh(),
                 ),
@@ -68,8 +73,8 @@ class GalleryTab extends ConsumerWidget {
                 sliver: SliverGrid(
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
-                      final photos = galleryState.items;
-                      if (index == photos.length) {
+                      final albums = galleryState.items;
+                      if (index == albums.length) {
                         return galleryState.hasMore
                             ? GestureDetector(
                                 onTap: () => notifier.loadMore(),
@@ -92,84 +97,106 @@ class GalleryTab extends ConsumerWidget {
                               )
                             : const SizedBox.shrink();
                       }
-                      return _GalleryTile(photo: galleryState.items[index]);
+                      return _AlbumTile(album: albums[index]);
                     },
                     childCount: galleryState.items.length + (galleryState.hasMore ? 1 : 0),
                   ),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    crossAxisSpacing: 8,
-                    mainAxisSpacing: 8,
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    childAspectRatio: 0.8,
                   ),
                 ),
               ),
           ],
         ),
       ),
+      floatingActionButton: canManage
+          ? FloatingActionButton.extended(
+              onPressed: () => context.push('/gallery/create').then((_) => notifier.refresh()),
+              backgroundColor: AppColors.primaryMaroon,
+              icon: const Icon(Icons.add_photo_alternate, color: Colors.white),
+              label: const Text('New Album', style: TextStyle(color: Colors.white)),
+            )
+          : null,
     );
   }
 }
 
-class _GalleryTile extends StatelessWidget {
-  final GalleryModel photo;
-  const _GalleryTile({required this.photo});
+class _AlbumTile extends StatelessWidget {
+  final Album album;
+  const _AlbumTile({required this.album});
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => _showFullImage(context),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: Image.network(
-          photo.imageUrl,
-          fit: BoxFit.cover,
-          loadingBuilder: (_, child, progress) =>
-              progress == null ? child : const SkeletonBox(height: double.infinity),
-          errorBuilder: (_, __, ___) => Container(
-            color: Colors.grey[200],
-            child: const Icon(Icons.broken_image, color: Colors.grey),
-          ),
+      onTap: () => context.push('/gallery/album/${album.id}', extra: album),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
-      ),
-    );
-  }
-
-  void _showFullImage(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (ctx) => Dialog(
-        backgroundColor: Colors.black,
-        insetPadding: EdgeInsets.zero,
-        child: GestureDetector(
-          onTap: () => Navigator.pop(ctx),
-          child: Stack(
-            children: [
-              Center(
-                child: InteractiveViewer(
-                  child: Image.network(photo.imageUrl),
-                ),
-              ),
-              Positioned(
-                top: 40,
-                right: 16,
-                child: IconButton(
-                  icon: const Icon(Icons.close, color: Colors.white, size: 32),
-                  onPressed: () => Navigator.pop(ctx),
-                ),
-              ),
-              if (photo.caption != null)
-                Positioned(
-                  bottom: 24,
-                  left: 16,
-                  right: 16,
-                  child: Text(
-                    photo.caption!,
-                    style: const TextStyle(color: Colors.white, fontSize: 14),
-                    textAlign: TextAlign.center,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                child: Image.network(
+                  album.coverUrl,
+                  fit: BoxFit.cover,
+                  loadingBuilder: (_, child, progress) =>
+                      progress == null ? child : const SkeletonBox(height: double.infinity),
+                  errorBuilder: (_, __, ___) => Container(
+                    color: Colors.grey[200],
+                    child: const Icon(Icons.broken_image, color: Colors.grey),
                   ),
                 ),
-            ],
-          ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    album.title.isEmpty ? 'Untitled Album' : album.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: Colors.black, // Explicitly black for white background
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryGold.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      album.category,
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: AppColors.primaryMaroon,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

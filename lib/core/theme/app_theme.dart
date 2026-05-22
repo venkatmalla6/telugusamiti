@@ -12,7 +12,7 @@ class AppTheme {
       colorScheme: const ColorScheme.light(
         primary: AppColors.primaryMaroon,
         secondary: AppColors.primaryGold,
-        surface: AppColors.lightBackground,
+        surface: AppColors.creamSurface,
         error: AppColors.error,
         onPrimary: Colors.white,
         onSecondary: Colors.black,
