@@ -186,7 +186,7 @@ class _CreateAlbumScreenState extends ConsumerState<CreateAlbumScreen> {
                 onPressed: _pickMedia,
                 icon: const Icon(Icons.collections),
                 label: const Text('Add Photos/Videos'),
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryGold),
+                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF5C0A0A)),
               ),
               const SizedBox(height: 8),
               // Show count of selected media
@@ -203,10 +203,10 @@ class _CreateAlbumScreenState extends ConsumerState<CreateAlbumScreen> {
                   onPressed: _isLoading ? null : _createAlbum,
                   icon: const Icon(Icons.save),
                   label: _isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
+                      ? const CircularProgressIndicator(color: const Color(0xFF5C0A0A))
                       : const Text('Create Album'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryGold,
+                    backgroundColor: const Color(0xFF5C0A0A),
                   ),
                 ),
             ],

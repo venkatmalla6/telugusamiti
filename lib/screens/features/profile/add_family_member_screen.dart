@@ -105,7 +105,7 @@ class _AddFamilyMemberScreenState extends ConsumerState<AddFamilyMemberScreen> {
       appBar: AppBar(
         title: const Text('Add Family Member'),
         backgroundColor: AppColors.primaryMaroon,
-        foregroundColor: Colors.white,
+        foregroundColor: const Color(0xFF5C0A0A),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -187,7 +187,7 @@ class _AddFamilyMemberScreenState extends ConsumerState<AddFamilyMemberScreen> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   child: editState.isLoading
-                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: const Color(0xFF5C0A0A), strokeWidth: 2))
                       : const Text('Add Member', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 ),
               ),

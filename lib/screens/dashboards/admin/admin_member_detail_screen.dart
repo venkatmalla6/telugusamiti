@@ -21,14 +21,14 @@ class AdminMemberDetailScreen extends ConsumerWidget {
     final eventsAsync = ref.watch(adminUserEventHistoryProvider(uid));
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0D0D),
+      backgroundColor: const Color(0xFFFAF2E6),
       appBar: AppBar(
         backgroundColor: AppColors.primaryMaroon,
-        foregroundColor: Colors.white,
+        foregroundColor: const Color(0xFF5C0A0A),
         title: const Text('Member Profile'),
       ),
       body: userAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryGold)),
+        loading: () => const Center(child: CircularProgressIndicator(color: const Color(0xFF5C0A0A))),
         error: (e, _) => Center(child: Text('Error: $e', style: const TextStyle(color: Colors.red))),
         data: (user) {
           if (user == null) {
@@ -64,18 +64,18 @@ class AdminMemberDetailScreen extends ConsumerWidget {
                 backgroundImage: user.photoUrl != null ? NetworkImage(user.photoUrl!) : null,
                 child: user.photoUrl == null
                     ? Text(
-                        (user.displayName ?? 'U').substring(0, 1).toUpperCase(),
-                        style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
+                        (user.displayName?.isNotEmpty == true ? user.displayName! : 'U').substring(0, 1).toUpperCase(),
+                        style: const TextStyle(color: const Color(0xFF5C0A0A), fontSize: 32, fontWeight: FontWeight.bold),
                       )
                     : null,
               ),
               const SizedBox(height: 12),
               Text(
                 user.displayName ?? 'Unknown Member',
-                style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                style: const TextStyle(color: const Color(0xFF5C0A0A), fontSize: 20, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 4),
-              Text(user.email ?? user.phoneNumber ?? '', style: const TextStyle(color: Colors.white60, fontSize: 13)),
+              Text(user.email ?? user.phoneNumber ?? '', style: TextStyle(color: const Color(0x995C0A0A), fontSize: 13)),
               const SizedBox(height: 12),
               // Member ID row
               GestureDetector(
@@ -94,14 +94,14 @@ class AdminMemberDetailScreen extends ConsumerWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.badge_outlined, color: Colors.white60, size: 14),
+                      const Icon(Icons.badge_outlined, color: const Color(0x995C0A0A), size: 14),
                       const SizedBox(width: 6),
                       Text(
                         'ID: ${user.uid.length > 12 ? '${user.uid.substring(0, 12)}...' : user.uid}',
-                        style: const TextStyle(color: Colors.white60, fontSize: 11, fontFamily: 'monospace'),
+                        style: TextStyle(color: const Color(0x995C0A0A), fontSize: 11, fontFamily: 'monospace'),
                       ),
                       const SizedBox(width: 6),
-                      const Icon(Icons.copy, color: Colors.white60, size: 12),
+                      const Icon(Icons.copy, color: const Color(0x995C0A0A), size: 12),
                     ],
                   ),
                 ),
@@ -139,12 +139,12 @@ class AdminMemberDetailScreen extends ConsumerWidget {
                   const Spacer(),
                   DropdownButton<UserRole>(
                     value: user.role,
-                    dropdownColor: const Color(0xFF2A2A2A),
-                    style: const TextStyle(color: Colors.white, fontSize: 13),
+                    dropdownColor: Colors.white,
+                    style: const TextStyle(color: const Color(0xFF5C0A0A), fontSize: 13, fontWeight: FontWeight.bold),
                     underline: const SizedBox.shrink(),
                     items: UserRole.values.map((r) => DropdownMenuItem(
                       value: r,
-                      child: Text(r.name.toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 13)),
+                      child: Text(r.name.toUpperCase()),
                     )).toList(),
                     onChanged: (newRole) async {
                       if (newRole == null || newRole == user.role) return;
@@ -170,7 +170,7 @@ class AdminMemberDetailScreen extends ConsumerWidget {
           title: 'Membership Subscription',
           children: [
             subAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryGold)),
+              loading: () => const Center(child: CircularProgressIndicator(color: const Color(0xFF5C0A0A))),
               error: (_, __) => const Text('Could not load subscription', style: TextStyle(color: Colors.red)),
               data: (sub) {
                 if (sub == null) {
@@ -208,7 +208,7 @@ class AdminMemberDetailScreen extends ConsumerWidget {
           title: 'Payment History',
           children: [
             paymentsAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryGold)),
+              loading: () => const Center(child: CircularProgressIndicator(color: const Color(0xFF5C0A0A))),
               error: (_, __) => const Text('Could not load payments', style: TextStyle(color: Colors.red)),
               data: (payments) {
                 if (payments.isEmpty) {
@@ -222,7 +222,7 @@ class AdminMemberDetailScreen extends ConsumerWidget {
                     margin: const EdgeInsets.only(bottom: 8),
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF2A2A2A),
+                      color: Colors.grey.shade100,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
@@ -237,7 +237,7 @@ class AdminMemberDetailScreen extends ConsumerWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(p.description, style: const TextStyle(color: Colors.white, fontSize: 13)),
+                              Text(p.description, style: const TextStyle(color: const Color(0xFF5C0A0A), fontSize: 13)),
                               Text(
                                 DateFormat('MMM d, yyyy').format(p.createdAt),
                                 style: const TextStyle(color: Colors.grey, fontSize: 11),
@@ -247,7 +247,7 @@ class AdminMemberDetailScreen extends ConsumerWidget {
                         ),
                         Text(
                           '₹${p.amount.toStringAsFixed(0)}',
-                          style: const TextStyle(color: AppColors.primaryGold, fontWeight: FontWeight.bold),
+                          style: const TextStyle(color: const Color(0xFF5C0A0A), fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
@@ -265,7 +265,7 @@ class AdminMemberDetailScreen extends ConsumerWidget {
           title: 'Event Participation',
           children: [
             eventsAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryGold)),
+              loading: () => const Center(child: CircularProgressIndicator(color: const Color(0xFF5C0A0A))),
               error: (_, __) => const Text('Could not load events', style: TextStyle(color: Colors.red)),
               data: (regs) {
                 if (regs.isEmpty) {
@@ -279,12 +279,12 @@ class AdminMemberDetailScreen extends ConsumerWidget {
                     margin: const EdgeInsets.only(bottom: 8),
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF2A2A2A),
+                      color: Colors.grey.shade100,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.event, color: AppColors.primaryGold, size: 16),
+                        const Icon(Icons.event, color: const Color(0xFF5C0A0A), size: 16),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Column(
@@ -292,7 +292,7 @@ class AdminMemberDetailScreen extends ConsumerWidget {
                             children: [
                               Text(
                                 'Event ID: ${r.eventId.length > 10 ? r.eventId.substring(0, 10) : r.eventId}...',
-                                style: const TextStyle(color: Colors.white, fontSize: 12),
+                                style: const TextStyle(color: const Color(0xFF5C0A0A), fontSize: 12),
                               ),
                               Text(
                                 DateFormat('MMM d, yyyy').format(r.registrationDate),
@@ -306,7 +306,7 @@ class AdminMemberDetailScreen extends ConsumerWidget {
                           children: [
                             Text(
                               '${1 + r.numberOfAdults + r.numberOfChildren} members',
-                              style: const TextStyle(color: Colors.white70, fontSize: 11),
+                              style: TextStyle(color: const Color(0xB35C0A0A), fontSize: 11),
                             ),
                             if (r.foodClaimed)
                               const Text('🍽️ Food claimed', style: TextStyle(color: Colors.orange, fontSize: 10)),
@@ -322,6 +322,46 @@ class AdminMemberDetailScreen extends ConsumerWidget {
         ),
 
         const SizedBox(height: 30),
+
+        // ─── Delete User ──────────────────────────────────────────────
+        ElevatedButton.icon(
+          onPressed: () async {
+            final confirm = await showDialog<bool>(
+              context: context,
+              builder: (c) => AlertDialog(
+                title: const Text('Delete User?'),
+                content: const Text('Are you sure you want to permanently delete this user? This cannot be undone.'),
+                actions: [
+                  TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('CANCEL')),
+                  TextButton(
+                    onPressed: () => Navigator.pop(c, true),
+                    style: TextButton.styleFrom(foregroundColor: Colors.red),
+                    child: const Text('DELETE'),
+                  ),
+                ],
+              ),
+            );
+
+            if (confirm == true) {
+              await ref.read(adminRepositoryProvider).deleteUser(user.uid);
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('User deleted successfully.'), backgroundColor: Colors.red),
+                );
+                context.pop();
+              }
+            }
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.red.shade100,
+            foregroundColor: Colors.red.shade900,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+          icon: const Icon(Icons.delete_forever),
+          label: const Text('Delete Member / Volunteer', style: TextStyle(fontWeight: FontWeight.bold)),
+        ),
+        const SizedBox(height: 30),
       ],
     );
   }
@@ -336,18 +376,25 @@ class _InfoSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white10),
+        border: Border.all(color: const Color(0x4D5C0A0A)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
-            child: Text(title, style: const TextStyle(color: AppColors.primaryGold, fontSize: 13, fontWeight: FontWeight.bold)),
+            child: Text(title, style: const TextStyle(color: const Color(0xFF5C0A0A), fontSize: 13, fontWeight: FontWeight.bold)),
           ),
-          const Divider(color: Colors.white10, height: 1),
+          const Divider(color: Color(0x1A5C0A0A), height: 1),
           Padding(
             padding: const EdgeInsets.all(12),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: children),
@@ -371,11 +418,11 @@ class _InfoRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
         children: [
-          Icon(icon, color: Colors.grey, size: 16),
+          Icon(icon, color: Colors.grey.shade600, size: 16),
           const SizedBox(width: 10),
-          Text('$label:', style: const TextStyle(color: Colors.grey, fontSize: 13)),
+          Text('$label:', style: TextStyle(color: Colors.grey.shade700, fontSize: 13)),
           const Spacer(),
-          Text(value, style: TextStyle(color: valueColor ?? Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+          Text(value, style: TextStyle(color: valueColor ?? const Color(0xFF5C0A0A), fontSize: 13, fontWeight: FontWeight.w600)),
         ],
       ),
     );

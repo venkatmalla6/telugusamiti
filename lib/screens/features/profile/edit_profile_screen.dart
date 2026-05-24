@@ -103,7 +103,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       appBar: AppBar(
         title: const Text('Edit Profile'),
         backgroundColor: AppColors.primaryMaroon,
-        foregroundColor: Colors.white,
+        foregroundColor: const Color(0xFF5C0A0A),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
@@ -136,7 +136,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         color: AppColors.primaryMaroon,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
+                      child: const Icon(Icons.camera_alt, color: const Color(0xFF5C0A0A), size: 20),
                     ),
                   ],
                 ),
@@ -190,7 +190,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   child: editState.isLoading
-                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: const Color(0xFF5C0A0A), strokeWidth: 2))
                       : const Text('Save Changes', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 ),
               ),

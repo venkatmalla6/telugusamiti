@@ -20,6 +20,10 @@ class UserRepository {
 
   Future<UserModel?> getUser(String uid) => _userService.getById(uid);
 
+  Future<List<UserModel>> getPendingUsers() async {
+    return await _userService.getWhere(field: 'approvalStatus', isEqualTo: ApprovalStatus.pending.name);
+  }
+
   Future<void> createUser(UserModel user) async {
     try {
       await _userService.set(user.uid, user);

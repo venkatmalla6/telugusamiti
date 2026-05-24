@@ -15,15 +15,15 @@ class AdminEventsTab extends ConsumerWidget {
     final eventsAsync = ref.watch(allEventsProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0D0D),
+      backgroundColor: const Color(0xFFFAF2E6),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push('/admin/events/create'),
         backgroundColor: AppColors.primaryMaroon,
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('New Event', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        icon: const Icon(Icons.add, color: const Color(0xFF5C0A0A)),
+        label: const Text('New Event', style: TextStyle(color: const Color(0xFF5C0A0A), fontWeight: FontWeight.bold)),
       ),
       body: eventsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryGold)),
+        loading: () => const Center(child: CircularProgressIndicator(color: const Color(0xFF5C0A0A))),
         error: (e, _) => Center(child: Text('Error: $e', style: const TextStyle(color: Colors.red))),
         data: (events) {
           if (events.isEmpty) {
@@ -38,8 +38,8 @@ class AdminEventsTab extends ConsumerWidget {
                   ElevatedButton.icon(
                     onPressed: () => context.push('/admin/events/create'),
                     style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryMaroon),
-                    icon: const Icon(Icons.add, color: Colors.white),
-                    label: const Text('Create First Event', style: TextStyle(color: Colors.white)),
+                    icon: const Icon(Icons.add, color: const Color(0xFF5C0A0A)),
+                    label: const Text('Create First Event', style: TextStyle(color: const Color(0xFF5C0A0A))),
                   ),
                 ],
               ),
@@ -80,7 +80,7 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(title, style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 0.5));
+    return Text(title, style: TextStyle(color: const Color(0xB35C0A0A), fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 0.5));
   }
 }
 
@@ -95,7 +95,7 @@ class _AdminEventCard extends ConsumerWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
+        color: const Color(0xFF5C0A0A),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: isPast ? Colors.white10 : AppColors.primaryMaroon.withValues(alpha: 0.4)),
       ),
@@ -180,7 +180,7 @@ class _AdminEventCard extends ConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.edit, color: AppColors.primaryGold, size: 20),
+                    icon: const Icon(Icons.edit, color: const Color(0xFF5C0A0A), size: 20),
                     onPressed: () => context.push('/admin/events/edit/${event.id}'),
                     visualDensity: VisualDensity.compact,
                   ),
@@ -202,9 +202,9 @@ class _AdminEventCard extends ConsumerWidget {
     final result = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1A1A1A),
-        title: const Text('Delete Event', style: TextStyle(color: Colors.white)),
-        content: Text('Delete "${event.title}"? This cannot be undone.', style: const TextStyle(color: Colors.white70)),
+        backgroundColor: const Color(0xFF5C0A0A),
+        title: const Text('Delete Event', style: TextStyle(color: const Color(0xFF5C0A0A))),
+        content: Text('Delete "${event.title}"? This cannot be undone.', style: TextStyle(color: const Color(0xB35C0A0A))),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
           TextButton(

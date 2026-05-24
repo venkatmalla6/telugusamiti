@@ -12,12 +12,12 @@ class ScanQRScreen extends StatefulWidget {
 
 class _ScanQRScreenState extends State<ScanQRScreen> {
   final MobileScannerController controller = MobileScannerController(
-    detectionSpeed: DetectionSpeed.noDuplicates,
+    detectionSpeed: DetectionSpeed.normal,
   );
   
   bool _isProcessing = false;
 
-  void _onDetect(BarcodeCapture capture) {
+  void _onDetect(BarcodeCapture capture) async {
     if (_isProcessing) return;
     
     final List<Barcode> barcodes = capture.barcodes;
@@ -30,12 +30,18 @@ class _ScanQRScreenState extends State<ScanQRScreen> {
         if (parts.length >= 2) {
           final eventId = parts[0];
           final registrationId = parts[1];
-          // Navigate to validation screen
-          context.push('/volunteer/validate/$eventId/$registrationId').then((_) {
-            if (mounted) {
-              setState(() => _isProcessing = false);
+          // Navigate to validation screen and wait for it to pop
+          await context.push('/volunteer/validate/$eventId/$registrationId');
+          
+          if (mounted) {
+            setState(() => _isProcessing = false);
+            // Restart the scanner in case it was paused automatically
+            try {
+              controller.start();
+            } catch (e) {
+              debugPrint('Failed to restart scanner: $e');
             }
-          });
+          }
         } else {
           _showError('Invalid QR Code Format');
         }
@@ -69,7 +75,7 @@ class _ScanQRScreenState extends State<ScanQRScreen> {
       appBar: AppBar(
         title: const Text('Scan Event QR'),
         backgroundColor: AppColors.primaryMaroon,
-        foregroundColor: Colors.white,
+        foregroundColor: const Color(0xFF5C0A0A),
       ),
       body: Stack(
         children: [
@@ -82,7 +88,7 @@ class _ScanQRScreenState extends State<ScanQRScreen> {
           Container(
             decoration: ShapeDecoration(
               shape: QrScannerOverlayShape(
-                borderColor: AppColors.primaryGold,
+                borderColor: const Color(0xFF5C0A0A),
                 borderRadius: 10,
                 borderLength: 30,
                 borderWidth: 10,
@@ -100,7 +106,7 @@ class _ScanQRScreenState extends State<ScanQRScreen> {
               'Align the QR code within the frame',
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: Colors.white,
+                color: const Color(0xFF5C0A0A),
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
                 shadows: [Shadow(color: Colors.black, blurRadius: 4)],
@@ -110,7 +116,7 @@ class _ScanQRScreenState extends State<ScanQRScreen> {
           
           if (_isProcessing)
             const Center(
-              child: CircularProgressIndicator(color: AppColors.primaryGold),
+              child: CircularProgressIndicator(color: const Color(0xFF5C0A0A)),
             ),
         ],
       ),

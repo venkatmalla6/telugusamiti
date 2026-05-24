@@ -33,7 +33,7 @@ class _EventsTabState extends ConsumerState<EventsTab> {
               title: Text('Events'),
               pinned: true,
               backgroundColor: AppColors.primaryMaroon,
-              foregroundColor: Colors.white,
+              foregroundColor: const Color(0xFF5C0A0A),
             ),
             SliverPadding(
               padding: const EdgeInsets.all(16),
@@ -88,118 +88,128 @@ class _EventListTile extends ConsumerWidget {
   final EventModel event;
   const _EventListTile({required this.event});
 
+  Widget _eventPlaceholder() {
+    return Container(
+      color: AppColors.primaryMaroon.withOpacity(0.1),
+      child: const Icon(Icons.event, color: AppColors.primaryMaroon, size: 40),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final registrationAsync = ref.watch(eventRegistrationProvider(event.id));
-    final dateStr = DateFormat('EEE, dd MMM • hh:mm a').format(event.startDate);
+    final monthStr = DateFormat.MMM().format(event.startDate).toUpperCase();
+    final dayStr = DateFormat.d().format(event.startDate);
+    
+    // In Telugu
+    final monthsTelugu = {
+      'JAN': 'జన', 'FEB': 'ఫిబ్', 'MAR': 'మార్చి', 'APR': 'ఏప్రి', 'MAY': 'మే', 'JUN': 'జూన్',
+      'JUL': 'జూలై', 'AUG': 'ఆగ', 'SEP': 'సెప్టె', 'OCT': 'అక్టో', 'NOV': 'నవం', 'DEC': 'డిసెం'
+    };
+    final teluguMonth = monthsTelugu[monthStr] ?? monthStr;
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 14),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      elevation: 2,
+    return Container(
+      height: 110,
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0x4DD4AF37)),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 4)),
+        ],
+      ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         onTap: () => context.push('/events/${event.id}'),
         child: Row(
           children: [
-            // Date block on left
-            Container(
-              width: 70,
-              height: 100,
-              decoration: const BoxDecoration(
-                color: AppColors.primaryMaroon,
-                borderRadius: BorderRadius.horizontal(left: Radius.circular(14)),
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    DateFormat.d().format(event.startDate),
-                    style: const TextStyle(
-                      color: AppColors.primaryGold,
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    DateFormat.MMM().format(event.startDate).toUpperCase(),
-                    style: const TextStyle(color: Colors.white70, fontSize: 12, letterSpacing: 1),
-                  ),
-                ],
+            // Image left side
+            ClipRRect(
+              borderRadius: const BorderRadius.horizontal(left: Radius.circular(16)),
+              child: SizedBox(
+                width: 100,
+                height: double.infinity,
+                child: event.imageUrl != null
+                    ? Image.network(event.imageUrl!, fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => _eventPlaceholder())
+                    : _eventPlaceholder(),
               ),
             ),
-            // Details
+            
+            // Content middle
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                padding: const EdgeInsets.all(12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF5C0A0A),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Text('రాబోయేది', style: TextStyle(color: Colors.white, fontSize: 10)),
+                    ),
+                    const SizedBox(height: 8),
                     Text(
                       event.title,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                      maxLines: 2,
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: Color(0xFF5C0A0A), fontWeight: FontWeight.bold, fontSize: 15),
                     ),
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        const Icon(Icons.schedule, size: 13, color: Colors.grey),
-                        const SizedBox(width: 4),
-                        Text(dateStr, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        const Icon(Icons.location_on, size: 13, color: AppColors.primaryMaroon),
+                        const Icon(Icons.location_on, size: 14, color: Color(0xFF7D0E0E)),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
-                            event.location,
-                            style: const TextStyle(fontSize: 12, color: AppColors.primaryMaroon),
+                            event.location.isNotEmpty ? event.location : 'అణు కల్పక్కం కమ్యూనిటీ హాల్',
+                            maxLines: 1,
                             overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 11, color: Color(0xFF5C0A0A)),
                           ),
                         ),
                       ],
                     ),
-                    if (event.maxCapacity > 0) ...[
-                      const SizedBox(height: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryGold.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          'Capacity: ${event.maxCapacity}',
-                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-                        ),
-                      ),
-                    ],
-                    if (event.hasFood) ...[
-                      const SizedBox(height: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: Colors.orange.shade50,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.orange.shade200),
-                        ),
-                        child: Text(
-                          '🍽️ Food Included',
-                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.orange.shade800),
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 12),
                   ],
                 ),
               ),
             ),
-            const Padding(
-              padding: EdgeInsets.only(right: 12),
-              child: Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
+            
+            // Date right side
+            Container(
+              width: 55,
+              decoration: BoxDecoration(
+                border: Border(left: BorderSide(color: Colors.grey.shade200)),
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    width: double.infinity,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF5C0A0A),
+                      borderRadius: BorderRadius.only(topRight: Radius.circular(16)),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    child: Text(
+                      teluguMonth,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  Expanded(
+                    child: Center(
+                      child: Text(
+                        dayStr,
+                        style: const TextStyle(color: Color(0xFF5C0A0A), fontSize: 24, fontWeight: FontWeight.w900),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),

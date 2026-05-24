@@ -74,35 +74,24 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
         }
       },
       child: Scaffold(
-        backgroundColor: const Color(0xFF0D0D0D),
-        appBar: AppBar(
+        backgroundColor: const Color(0xFFFAF2E6),
+        appBar: tabIndex == 0 ? null : AppBar(
           backgroundColor: AppColors.primaryMaroon,
           foregroundColor: Colors.white,
           elevation: 0,
-          title: userAsync.when(
-            data: (user) => Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _tabLabels[tabIndex],
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
-                ),
-                Text(
-                  'Welcome, ${user?.displayName?.split(' ').first ?? 'Admin'}',
-                  style: const TextStyle(fontSize: 12, color: Colors.white70),
-                ),
-              ],
-            ),
-            loading: () => const Text('Admin Panel'),
-            error: (_, __) => const Text('Admin Panel'),
+          title: Text(
+            _tabLabels[tabIndex],
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
           ),
           actions: [
             IconButton(
-              icon: const Icon(Icons.notifications_outlined, color: Colors.white),
-              onPressed: () => context.push('/admin/notifications/send'),
+              icon: const Icon(Icons.notifications_active, color: Colors.white),
+              tooltip: 'Manage Notifications',
+              onPressed: () => context.push('/admin/notifications/manage'),
             ),
             IconButton(
               icon: const Icon(Icons.logout, color: Colors.white),
+              tooltip: 'Sign Out',
               onPressed: () => ref.read(authControllerProvider).signOut(),
             ),
           ],
@@ -113,7 +102,7 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
         ),
         bottomNavigationBar: Container(
           decoration: BoxDecoration(
-            color: const Color(0xFF1A1A1A),
+            color: const Color(0xFF5C0A0A),
             boxShadow: [
               BoxShadow(color: Colors.black.withValues(alpha: 0.4), blurRadius: 12, offset: const Offset(0, -3)),
             ],

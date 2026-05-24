@@ -6,155 +6,58 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/skeleton_loader.dart';
 import '../../../core/widgets/empty_state_widget.dart';
 import '../../../models/event_model.dart';
-import '../../../models/announcement_model.dart';
 import '../../../models/subscription_model.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/dashboard_providers.dart';
 import '../../../providers/event_providers.dart';
+import 'widgets/custom_home_app_bar.dart';
 
 class HomeTab extends ConsumerWidget {
   const HomeTab({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return RefreshIndicator(
-      color: AppColors.primaryMaroon,
-      onRefresh: () async {
-        ref.invalidate(upcomingEventsProvider);
-        ref.invalidate(announcementsStreamProvider);
-        ref.invalidate(userSubscriptionProvider);
-      },
-      child: CustomScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        slivers: [
-          _buildSliverAppBar(context, ref),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 16),
-                  _MembershipBanner(),
-                  const SizedBox(height: 24),
-                  _QuickActionsRow(),
-                  const SizedBox(height: 24),
-                  _SectionHeader(title: 'Upcoming Events', onSeeAll: () => context.go('/user/events')),
-                  const SizedBox(height: 12),
-                  _UpcomingEventsRow(),
-                  const SizedBox(height: 24),
-                  _SectionHeader(title: 'Announcements', onSeeAll: null),
-                  const SizedBox(height: 12),
-                  _AnnouncementsList(),
-                  const SizedBox(height: 32),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSliverAppBar(BuildContext context, WidgetRef ref) {
     final userAsync = ref.watch(currentUserProvider);
-    final name = userAsync.value?.displayName ?? 'Member';
+    final name = userAsync.value?.displayName?.split(' ').first ?? 'Member';
     final hour = DateTime.now().hour;
-    final greeting = hour < 12 ? 'Good Morning' : hour < 17 ? 'Good Afternoon' : 'Good Evening';
+    final greetingPrefix = hour < 12 ? 'శుభ ఉదయం' : hour < 17 ? 'శుభ మధ్యాహ్నం' : 'శుభ సాయంత్రం';
 
-    return SliverAppBar(
-      expandedHeight: 140,
-      floating: false,
-      pinned: true,
-      backgroundColor: AppColors.primaryMaroon,
-      flexibleSpace: FlexibleSpaceBar(
-        background: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [AppColors.primaryMaroon, Color(0xFF5C0000)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+    return Scaffold(
+      backgroundColor: const Color(0xFFFAF2E6), // Cream background
+      body: RefreshIndicator(
+        color: AppColors.primaryMaroon,
+        onRefresh: () async {
+          ref.invalidate(upcomingEventsProvider);
+          ref.invalidate(userSubscriptionProvider);
+        },
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            CustomHomeAppBar(
+              greetingTitle: '$greetingPrefix ☀️',
+              greetingSubtitle: 'స్వాగతం, $name 🙏',
             ),
-          ),
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Row(
-                    children: [
-                      const Text('🙏 ', style: TextStyle(fontSize: 22)),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              greeting,
-                              style: const TextStyle(color: Colors.white70, fontSize: 14),
-                            ),
-                            Text(
-                              name,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.notifications_outlined, color: AppColors.primaryGold),
-                              onPressed: () => context.push('/notifications'),
-                            ),
-                            if (ref.watch(unreadNotificationsCountProvider) > 0)
-                              Positioned(
-                                right: 6,
-                                top: 6,
-                                child: Container(
-                                  padding: const EdgeInsets.all(2),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.primaryMaroon,
-                                    shape: BoxShape.circle,
-                                    border: Border.all(color: Colors.white, width: 1.5),
-                                  ),
-                                  constraints: const BoxConstraints(
-                                    minWidth: 16,
-                                    minHeight: 16,
-                                  ),
-                                  child: Text(
-                                    ref.watch(unreadNotificationsCountProvider) > 9
-                                        ? '9+'
-                                        : '${ref.watch(unreadNotificationsCountProvider)}',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 16),
+                    // Membership banner removed as per request
+                    _QuickActionsRow(),
+                    const SizedBox(height: 24),
+                    _SectionHeader(title: 'రాబోయే ఈవెంట్స్', onSeeAll: () => context.go('/user/events')),
+                    const SizedBox(height: 12),
+                    _UpcomingEventsRow(),
+                    const SizedBox(height: 24),
+                    _QuoteBanner(),
+                    const SizedBox(height: 32),
+                  ],
+                ),
               ),
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -171,25 +74,26 @@ class _MembershipBanner extends ConsumerWidget {
       loading: () => const MembershipSkeleton(),
       error: (_, __) => const SizedBox.shrink(),
       data: (sub) {
-        final isActive = sub?.status == SubscriptionStatus.active;
-        final expiry = sub != null
-            ? DateFormat.yMMMd().format(sub.endDate)
-            : null;
+        final now = DateTime.now();
+        final isExpired = sub != null && sub.endDate.isBefore(now);
+        final isActive = sub?.status == SubscriptionStatus.active && !isExpired;
+        final daysRemaining = sub != null ? sub.endDate.difference(now).inDays : 0;
+        final isExpiringSoon = isActive && daysRemaining <= 30;
+        
+        final expiry = sub != null ? DateFormat.yMMMd().format(sub.endDate) : null;
 
         return Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            gradient: LinearGradient(
-              colors: isActive
-                  ? [AppColors.primaryMaroon, const Color(0xFF9A0007)]
-                  : [Colors.orange.shade800, Colors.deepOrange.shade700],
+            gradient: const LinearGradient(
+              colors: [Color(0xFFCC5500), Color(0xFF8B2500)], // Orange to dark red gradient
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,
             ),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primaryMaroon.withValues(alpha: 0.3),
-                blurRadius: 12,
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
             ],
@@ -201,13 +105,14 @@ class _MembershipBanner extends ConsumerWidget {
                 width: 56,
                 height: 56,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
+                  color: const Color(0xFFD4AF37).withOpacity(0.2),
                   shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFFD4AF37), width: 2),
                 ),
-                child: Icon(
-                  isActive ? Icons.verified_user : Icons.warning_amber_rounded,
-                  color: AppColors.primaryGold,
-                  size: 28,
+                child: const Icon(
+                  Icons.workspace_premium, // Crown-like icon
+                  color: Color(0xFFF9E8B6),
+                  size: 32,
                 ),
               ),
               const SizedBox(width: 16),
@@ -216,41 +121,47 @@ class _MembershipBanner extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      isActive ? 'Active Member' : 'Membership Expired',
-                      style: const TextStyle(
-                        color: Colors.white,
+                      isExpired ? 'Membership Expired' : (isActive ? 'Active Member' : 'No Membership'),
+                      style: TextStyle(
+                        color: isExpiringSoon || isExpired ? Colors.yellowAccent : Colors.white,
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
                       ),
                     ),
-                    if (isActive && expiry != null)
+                    const SizedBox(height: 4),
+                    if (isExpiringSoon) ...[
                       Text(
-                        'Valid until $expiry',
-                        style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 13),
-                      )
-                    else if (!isActive)
-                      Text(
-                        'Renew now to enjoy full benefits',
-                        style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 13),
+                        'Renews in $daysRemaining days ($expiry)',
+                        style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
                       ),
-                    if (sub == null)
+                    ] else ...[
+                      Text(
+                        isActive && expiry != null 
+                            ? 'Valid until $expiry' 
+                            : 'Renew now to enjoy full benefits',
+                        style: const TextStyle(color: Colors.white, fontSize: 13),
+                      ),
+                    ],
+                    if (sub == null) ...[
+                      const SizedBox(height: 2),
                       const Text(
                         'No membership found',
-                        style: TextStyle(color: Colors.white70, fontSize: 13),
+                        style: TextStyle(color: Color(0xFFF9E8B6), fontSize: 12, fontWeight: FontWeight.bold),
                       ),
+                    ],
                   ],
                 ),
               ),
-              if (!isActive)
-                TextButton(
-                  style: TextButton.styleFrom(
-                    backgroundColor: AppColors.primaryGold,
+              if (!isActive || isExpiringSoon)
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFF9E8B6),
                     foregroundColor: Colors.black,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
                   onPressed: () => context.push('/membership/plans'),
-                  child: const Text('Renew', style: TextStyle(fontWeight: FontWeight.bold)),
+                  child: Text(isActive ? 'Renew Early' : 'Renew', style: const TextStyle(fontWeight: FontWeight.bold)),
                 ),
             ],
           ),
@@ -260,25 +171,25 @@ class _MembershipBanner extends ConsumerWidget {
   }
 }
 
-// ── Quick Actions ─────────────────────────────────────────────────────────────
+// ── Primary Quick Actions ───────────────────────────────────────────────────
 class _QuickActionsRow extends StatelessWidget {
   final List<_QuickAction> _actions = const [
-    _QuickAction(icon: Icons.event, label: 'Events', color: Color(0xFF800000)),
-    _QuickAction(icon: Icons.family_restroom, label: 'Family', color: Color(0xFF1565C0)),
-    _QuickAction(icon: Icons.payment, label: 'Pay Dues', color: Color(0xFF2E7D32)),
-    _QuickAction(icon: Icons.photo_library, label: 'Gallery', color: Color(0xFF6A1B9A)),
+    _QuickAction(icon: Icons.calendar_today, label: 'ఈవెంట్స్', color: Color(0xFF5C0A0A)),
+    _QuickAction(icon: Icons.family_restroom, label: 'ఫ్యామిలీ', color: Color(0xFF3F51B5)),
+    _QuickAction(icon: Icons.credit_card, label: 'ఫీజు వివరాలు', color: Color(0xFF2E7D32)),
+    _QuickAction(icon: Icons.photo_library, label: 'గ్యాలరీ', color: Color(0xFF6A1B9A)),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: _actions
-          .map((a) => _QuickActionButton(action: a))
-          .toList(),
+      children: _actions.map((a) => _QuickActionButton(action: a)).toList(),
     );
   }
 }
+
+
 
 class _QuickAction {
   final IconData icon;
@@ -296,38 +207,57 @@ class _QuickActionButton extends ConsumerWidget {
     return GestureDetector(
       onTap: () {
         switch (action.label) {
-          case 'Events':
+          case 'ఈవెంట్స్':
             ref.read(userDashboardIndexProvider.notifier).set(1);
             break;
-          case 'Family':
+          case 'ఫ్యామిలీ':
             context.push('/profile/family');
             break;
-          case 'Pay Dues':
+          case 'ఫీజు వివరాలు':
             context.push('/membership/plans');
             break;
-          case 'Gallery':
+          case 'గ్యాలరీ':
             ref.read(userDashboardIndexProvider.notifier).set(3);
             break;
         }
       },
-      child: Column(
-        children: [
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              color: action.color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: action.color.withValues(alpha: 0.25)),
+      child: Container(
+        width: 75,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0x4DD4AF37)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            )
+          ],
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: action.color.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(action.icon, color: action.color, size: 24),
             ),
-            child: Icon(action.icon, color: action.color, size: 28),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            action.label,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600),
-          ),
-        ],
+            const SizedBox(height: 8),
+            Text(
+              action.label,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Color(0xFF5C0A0A),
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -347,12 +277,25 @@ class _SectionHeader extends StatelessWidget {
       children: [
         Text(
           title,
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+          style: const TextStyle(
+            color: Color(0xFF5C0A0A),
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         if (onSeeAll != null)
-          TextButton(
-            onPressed: onSeeAll,
-            child: const Text('See All'),
+          GestureDetector(
+            onTap: onSeeAll,
+            child: Row(
+              children: [
+                const Text(
+                  'అన్ని చూడండి',
+                  style: TextStyle(color: Color(0xFF7D0E0E), fontSize: 13, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(width: 4),
+                const Icon(Icons.arrow_forward_ios, size: 12, color: Color(0xFF7D0E0E)),
+              ],
+            ),
           ),
       ],
     );
@@ -366,7 +309,7 @@ class _UpcomingEventsRow extends ConsumerWidget {
     final eventsAsync = ref.watch(upcomingEventsProvider);
 
     return SizedBox(
-      height: 200,
+      height: 140, // Reduced height for horizontal list to match mockup
       child: eventsAsync.when(
         loading: () => ListView.builder(
           scrollDirection: Axis.horizontal,
@@ -403,59 +346,125 @@ class _EventCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final registrationAsync = ref.watch(eventRegistrationProvider(event.id));
-    final dateStr = DateFormat.MMMd().format(event.startDate);
-    final dayStr = DateFormat.EEEE().format(event.startDate);
+    final monthStr = DateFormat.MMM().format(event.startDate).toUpperCase();
+    final dayStr = DateFormat.d().format(event.startDate);
+    
+    // In Telugu
+    final monthsTelugu = {
+      'JAN': 'జన', 'FEB': 'ఫిబ్', 'MAR': 'మార్చి', 'APR': 'ఏప్రి', 'MAY': 'మే', 'JUN': 'జూన్',
+      'JUL': 'జూలై', 'AUG': 'ఆగ', 'SEP': 'సెప్టె', 'OCT': 'అక్టో', 'NOV': 'నవం', 'DEC': 'డిసెం'
+    };
+    final teluguMonth = monthsTelugu[monthStr] ?? monthStr;
 
     return Container(
-      width: 190,
-      margin: const EdgeInsets.only(right: 12),
+      width: 280,
+      margin: const EdgeInsets.only(right: 16),
       decoration: BoxDecoration(
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        color: Theme.of(context).cardColor,
+        border: Border.all(color: const Color(0x4DD4AF37)),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 8, offset: const Offset(0, 2)),
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 4)),
         ],
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
         onTap: () => context.push('/events/${event.id}'),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
           children: [
-            // Image or placeholder
+            // Image left side
             ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-              child: event.imageUrl != null
-                  ? Image.network(event.imageUrl!, height: 110, width: double.infinity, fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => _eventPlaceholder())
-                  : _eventPlaceholder(),
+              borderRadius: const BorderRadius.horizontal(left: Radius.circular(16)),
+              child: SizedBox(
+                width: 100,
+                height: double.infinity,
+                child: event.imageUrl != null
+                    ? Image.network(event.imageUrl!, fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => _eventPlaceholder())
+                    : _eventPlaceholder(),
+              ),
             ),
+            
+            // Content right side
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+                padding: const EdgeInsets.all(12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(event.title, maxLines: 2, overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                    if (event.hasFood)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Text('🍽️ Food Included', style: TextStyle(fontSize: 10, color: Colors.orange.shade800, fontWeight: FontWeight.bold)),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF5C0A0A),
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                    const Spacer(),
-                    const Spacer(),
+                      child: const Text('రాబోయేది', style: TextStyle(color: Colors.white, fontSize: 10)),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      event.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: Color(0xFF5C0A0A), fontWeight: FontWeight.bold, fontSize: 15),
+                    ),
+                    const SizedBox(height: 6),
                     Row(
                       children: [
-                        Icon(Icons.calendar_today, size: 12, color: AppColors.primaryMaroon),
+                        const Icon(Icons.location_on, size: 14, color: Color(0xFF7D0E0E)),
                         const SizedBox(width: 4),
-                        Text('$dayStr, $dateStr',
-                            style: const TextStyle(fontSize: 11, color: AppColors.primaryMaroon)),
+                        Expanded(
+                          child: Text(
+                            event.location.isNotEmpty ? event.location : 'అణు కల్పక్కం కమ్యూనిటీ హాల్',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 11, color: Color(0xFF5C0A0A)),
+                          ),
+                        ),
                       ],
                     ),
                   ],
                 ),
+              ),
+            ),
+            
+            // Date right side
+            Container(
+              width: 50,
+              decoration: BoxDecoration(
+                border: Border(left: BorderSide(color: Colors.grey.shade200)),
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    width: double.infinity,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF5C0A0A),
+                      borderRadius: BorderRadius.only(topRight: Radius.circular(16)),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Text(
+                      teluguMonth,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  Expanded(
+                    child: Center(
+                      child: Text(
+                        dayStr,
+                        style: const TextStyle(color: Color(0xFF5C0A0A), fontSize: 20, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Text(
+                      '${event.startDate.year}',
+                      style: const TextStyle(color: Colors.grey, fontSize: 10),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -466,99 +475,50 @@ class _EventCard extends ConsumerWidget {
 
   Widget _eventPlaceholder() {
     return Container(
-      height: 110,
-      color: AppColors.primaryMaroon.withValues(alpha: 0.15),
+      color: AppColors.primaryMaroon.withOpacity(0.15),
       child: const Center(child: Icon(Icons.celebration, color: AppColors.primaryMaroon, size: 36)),
     );
   }
 }
 
-// ── Announcements List ────────────────────────────────────────────────────────
-class _AnnouncementsList extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final annAsync = ref.watch(announcementsStreamProvider);
-
-    return annAsync.when(
-      loading: () => Column(
-        children: List.generate(3, (_) => const AnnouncementSkeleton()),
-      ),
-      error: (_, __) => const EmptyStateWidget(
-        icon: Icons.announcement,
-        title: 'Could not load announcements',
-        subtitle: 'Pull to refresh',
-      ),
-      data: (announcements) {
-        if (announcements.isEmpty) {
-          return const EmptyStateWidget(
-            icon: Icons.campaign_outlined,
-            title: 'No announcements yet',
-            subtitle: 'Check back later for updates from the Samiti',
-          );
-        }
-        final sorted = [...announcements]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-        final preview = sorted.take(3).toList();
-        return Column(
-          children: preview
-              .map((a) => _AnnouncementTile(announcement: a))
-              .toList(),
-        );
-      },
-    );
-  }
-}
-
-class _AnnouncementTile extends StatelessWidget {
-  final AnnouncementModel announcement;
-  const _AnnouncementTile({required this.announcement});
-
+// ── Quote Banner ────────────────────────────────────────────────────────────
+class _QuoteBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 10),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 1,
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: AppColors.primaryMaroon.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(Icons.campaign, color: AppColors.primaryMaroon, size: 22),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    announcement.title,
-                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    DateFormat.yMMMd().format(announcement.createdAt),
-                    style: TextStyle(fontSize: 11, color: Colors.grey[500]),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    announcement.message,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 13),
-                  ),
-                ],
-              ),
-            ),
-          ],
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color: const Color(0xFF4A0404),
+        image: const DecorationImage(
+          image: AssetImage('assets/images/login_bg.png'), // Reuse asset for subtle background texture
+          fit: BoxFit.cover,
+          opacity: 0.2,
         ),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4)),
+        ],
+      ),
+      child: const Column(
+        children: [
+          Text(
+            '"మన భాష - మన బాట"',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Color(0xFFF9E8B6), fontSize: 16, fontStyle: FontStyle.italic),
+          ),
+          SizedBox(height: 4),
+          Text(
+            '"మన సంస్కృతి - మన గౌరవం"',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Color(0xFFF9E8B6), fontSize: 16, fontStyle: FontStyle.italic),
+          ),
+          SizedBox(height: 8),
+          Icon(Icons.spa, color: Color(0xFFD4AF37), size: 16),
+        ],
       ),
     );
   }
 }
+
+

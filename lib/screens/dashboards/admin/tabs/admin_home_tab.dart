@@ -6,6 +6,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../providers/admin_providers.dart';
 import '../../../../providers/auth_provider.dart';
 import '../../../../providers/event_providers.dart';
+import '../../../features/home/widgets/custom_home_app_bar.dart';
 
 class AdminHomeTab extends ConsumerWidget {
   const AdminHomeTab({super.key});
@@ -15,219 +16,244 @@ class AdminHomeTab extends ConsumerWidget {
     final analyticsAsync = ref.watch(adminAnalyticsProvider);
     final eventsAsync = ref.watch(allEventsProvider);
     final userAsync = ref.watch(currentUserProvider);
+    final name = userAsync.value?.displayName?.split(' ').first ?? 'Admin';
+    final hour = DateTime.now().hour;
+    final greetingPrefix = hour < 12 ? 'శుభ ఉదయం' : hour < 17 ? 'శుభ మధ్యాహ్నం' : 'శుభ సాయంత్రం';
 
-    return RefreshIndicator(
-      color: AppColors.primaryGold,
-      onRefresh: () async {
-        ref.invalidate(adminAnalyticsProvider);
-        ref.invalidate(allEventsProvider);
-      },
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ─── Header Card ────────────────────────────────────────────
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [AppColors.primaryMaroon, Color(0xFF5C0000)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '${_greeting()}, ${userAsync.value?.displayName?.split(' ').first ?? 'Admin'}!',
-                    style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    DateFormat('EEEE, MMMM d, yyyy').format(DateTime.now()),
-                    style: const TextStyle(color: Colors.white60, fontSize: 13),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Telugu Samiti Admin Panel',
-                    style: TextStyle(color: AppColors.primaryGold, fontSize: 13, fontWeight: FontWeight.w600),
-                  ),
-                ],
-              ),
+    return Scaffold(
+      backgroundColor: const Color(0xFFFAF2E6), // Cream background
+      body: RefreshIndicator(
+        color: AppColors.primaryMaroon,
+        onRefresh: () async {
+          ref.invalidate(adminAnalyticsProvider);
+          ref.invalidate(allEventsProvider);
+        },
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            CustomHomeAppBar(
+              greetingTitle: '$greetingPrefix ☀️',
+              greetingSubtitle: 'స్వాగతం, $name 🙏',
+              showMenu: false,
             ),
-
-            const SizedBox(height: 24),
-
-            // ─── Stats Cards ─────────────────────────────────────────────
-            const Text('Overview', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            analyticsAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryGold)),
-              error: (e, _) => Center(child: Text('Error: $e', style: const TextStyle(color: Colors.red))),
-              data: (stats) => GridView.count(
-                crossAxisCount: 2,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-                childAspectRatio: 1.4,
-                children: [
-                  _StatCard(
-                    icon: Icons.people_rounded,
-                    label: 'Total Members',
-                    value: '${stats['totalMembers'] ?? 0}',
-                    color: const Color(0xFF3B82F6),
-                  ),
-                  _StatCard(
-                    icon: Icons.card_membership_rounded,
-                    label: 'Active Subscriptions',
-                    value: '${stats['activeSubscriptions'] ?? 0}',
-                    color: const Color(0xFF10B981),
-                  ),
-                  _StatCard(
-                    icon: Icons.event_rounded,
-                    label: 'Total Events',
-                    value: '${stats['totalEvents'] ?? 0}',
-                    color: const Color(0xFFF59E0B),
-                  ),
-                  _StatCard(
-                    icon: Icons.currency_rupee_rounded,
-                    label: 'Total Collection',
-                    value: '₹${stats['totalCollection'] ?? 0}',
-                    color: AppColors.primaryMaroon,
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // ─── Quick Actions ────────────────────────────────────────────
-            const Text('Quick Actions', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _QuickActionButton(
-                    icon: Icons.add_circle_outline_rounded,
-                    label: 'Create Event',
-                    onTap: () => context.push('/admin/events/create'),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _QuickActionButton(
-                    icon: Icons.campaign_rounded,
-                    label: 'Announcement',
-                    onTap: () => context.push('/admin/create-announcement'),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _QuickActionButton(
-                    icon: Icons.notifications_rounded,
-                    label: 'Notify All',
-                    onTap: () => context.push('/admin/notifications/send'),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 24),
-
-            // ─── Upcoming Events ──────────────────────────────────────────
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text('Upcoming Events', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                TextButton(
-                  onPressed: () => ref.read(adminTabProvider.notifier).set(2),
-                  child: const Text('See All', style: TextStyle(color: AppColors.primaryGold)),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            eventsAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryGold)),
-              error: (e, _) => Text('Error: $e', style: const TextStyle(color: Colors.red)),
-              data: (events) {
-                final upcoming = events
-                    .where((e) => e.startDate.isAfter(DateTime.now()) && e.isPublished)
-                    .take(3)
-                    .toList();
-                if (upcoming.isEmpty) {
-                  return Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(color: const Color(0xFF1A1A1A), borderRadius: BorderRadius.circular(12)),
-                    child: const Center(child: Text('No upcoming events', style: TextStyle(color: Colors.grey))),
-                  );
-                }
-                return Column(
-                  children: upcoming.map((event) => Container(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1A1A1A),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.white12),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryMaroon.withValues(alpha: 0.3),
-                            borderRadius: BorderRadius.circular(8),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 16),
+                    // Role Badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF5C0A0A).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: const Color(0xFF5C0A0A).withOpacity(0.3)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: const [
+                          Icon(Icons.admin_panel_settings, color: Color(0xFF5C0A0A), size: 18),
+                          SizedBox(width: 8),
+                          Text(
+                            'ADMIN',
+                            style: TextStyle(
+                              color: Color(0xFF5C0A0A),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
                           ),
-                          child: const Icon(Icons.event, color: AppColors.primaryGold, size: 20),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // ─── Quick Actions ─────────────────────────────────────────────
+                    const Text('త్వరిత చర్యలు (Quick Actions)', style: TextStyle(color: Color(0xFF5C0A0A), fontSize: 18, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () => context.push('/admin/notifications/manage'),
+                            icon: const Icon(Icons.notifications_active),
+                            label: const Text('Manage\nNotifications', textAlign: TextAlign.center, style: TextStyle(fontSize: 13)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primaryGold,
+                              foregroundColor: const Color(0xFF5C0A0A),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                          ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(event.title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                              const SizedBox(height: 2),
+                          child: ElevatedButton.icon(
+                            onPressed: () => context.push('/admin/events/create'),
+                            icon: const Icon(Icons.add_box),
+                            label: const Text('Create\nEvent', textAlign: TextAlign.center, style: TextStyle(fontSize: 13)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primaryMaroon,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+
+                    // ─── Stats Cards ─────────────────────────────────────────────
+                    const Text('అవలోకనం (Overview)', style: TextStyle(color: Color(0xFF5C0A0A), fontSize: 18, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 12),
+                    analyticsAsync.when(
+                      loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryMaroon)),
+                      error: (e, _) => Center(child: Text('Error: $e', style: const TextStyle(color: Colors.red))),
+                      data: (stats) => GridView.count(
+                        crossAxisCount: 2,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        mainAxisSpacing: 12,
+                        crossAxisSpacing: 12,
+                        childAspectRatio: 1.4,
+                        children: [
+                          _StatCard(
+                            icon: Icons.people_rounded,
+                            label: 'Total Members',
+                            value: '${stats['totalMembers'] ?? 0}',
+                            color: const Color(0xFFE65100),
+                          ),
+                          _StatCard(
+                            icon: Icons.card_membership_rounded,
+                            label: 'Active Subscriptions',
+                            value: '${stats['activeSubscriptions'] ?? 0}',
+                            color: const Color(0xFF00695C),
+                          ),
+                          _StatCard(
+                            icon: Icons.event_rounded,
+                            label: 'Total Events',
+                            value: '${stats['totalEvents'] ?? 0}',
+                            color: const Color(0xFF1565C0),
+                          ),
+                          _StatCard(
+                            icon: Icons.currency_rupee_rounded,
+                            label: 'Total Collection',
+                            value: '₹${stats['totalCollection'] ?? 0}',
+                            color: const Color(0xFF5C0A0A),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // ─── Upcoming Events ──────────────────────────────────────────
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('రాబోయే ఈవెంట్స్ (Upcoming)', style: TextStyle(color: Color(0xFF5C0A0A), fontSize: 18, fontWeight: FontWeight.bold)),
+                        GestureDetector(
+                          onTap: () => ref.read(adminTabProvider.notifier).set(2),
+                          child: Row(
+                            children: const [
                               Text(
-                                DateFormat('MMM d, yyyy • h:mm a').format(event.startDate),
-                                style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                'అన్ని చూడండి',
+                                style: TextStyle(color: Color(0xFF7D0E0E), fontSize: 13, fontWeight: FontWeight.bold),
                               ),
+                              SizedBox(width: 4),
+                              Icon(Icons.arrow_forward_ios, size: 12, color: Color(0xFF7D0E0E)),
                             ],
                           ),
                         ),
-                        if (event.hasFood)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.orange.shade900.withValues(alpha: 0.4),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Text('🍽️', style: TextStyle(fontSize: 14)),
-                          ),
                       ],
                     ),
-                  )).toList(),
-                );
-              },
-            ),
+                    const SizedBox(height: 12),
+                    eventsAsync.when(
+                      loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryMaroon)),
+                      error: (e, _) => Text('Error: $e', style: const TextStyle(color: Colors.red)),
+                      data: (events) {
+                        final upcoming = events
+                            .where((e) => e.startDate.isAfter(DateTime.now()) && e.isPublished)
+                            .take(3)
+                            .toList();
+                        if (upcoming.isEmpty) {
+                          return Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: const Color(0x4DD4AF37)),
+                            ),
+                            child: const Center(child: Text('No upcoming events', style: TextStyle(color: Colors.grey))),
+                          );
+                        }
+                        return Column(
+                          children: upcoming.map((event) => Container(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: const Color(0x4DD4AF37)),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.05),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                )
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF5C0A0A).withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Icon(Icons.event, color: Color(0xFF5C0A0A), size: 20),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(event.title, style: const TextStyle(color: Color(0xFF5C0A0A), fontWeight: FontWeight.bold)),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        DateFormat('MMM d, yyyy • h:mm a').format(event.startDate),
+                                        style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                if (event.hasFood)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.orange.shade100,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: const Text('🍽️', style: TextStyle(fontSize: 14)),
+                                  ),
+                              ],
+                            ),
+                          )).toList(),
+                        );
+                      },
+                    ),
 
-            const SizedBox(height: 20),
+                    const SizedBox(height: 32),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
       ),
     );
-  }
-
-  String _greeting() {
-    final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good Morning';
-    if (hour < 17) return 'Good Afternoon';
-    return 'Good Evening';
   }
 }
 
@@ -246,9 +272,16 @@ class _StatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
+        border: Border.all(color: color.withOpacity(0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -257,7 +290,7 @@ class _StatCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.15),
+              color: color.withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, color: color, size: 20),
@@ -275,33 +308,3 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-class _QuickActionButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  const _QuickActionButton({required this.icon, required this.label, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        decoration: BoxDecoration(
-          color: const Color(0xFF1A1A1A),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.primaryMaroon.withValues(alpha: 0.5)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: AppColors.primaryGold, size: 24),
-            const SizedBox(height: 6),
-            Text(label, style: const TextStyle(color: Colors.white70, fontSize: 11), textAlign: TextAlign.center),
-          ],
-        ),
-      ),
-    );
-  }
-}

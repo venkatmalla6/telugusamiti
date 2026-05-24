@@ -220,7 +220,7 @@ class _EventRegistrationScreenState extends ConsumerState<EventRegistrationScree
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                       child: _isLoading 
-                          ? const CircularProgressIndicator(color: Colors.white)
+                          ? const CircularProgressIndicator(color: const Color(0xFF5C0A0A))
                           : Text(
                               _existingReg != null ? 'Update Registration' : 'Confirm Registration',
                               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),

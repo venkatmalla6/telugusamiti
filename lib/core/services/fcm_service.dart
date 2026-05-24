@@ -150,18 +150,27 @@ class FcmService {
   }
 
   Future<void> _upsertToken(String uid, String token) async {
-    final docId = _tokenDocId(token);
-    await _db
-        .collection('users')
-        .doc(uid)
-        .collection('fcmTokens')
-        .doc(docId)
-        .set({
-      'token': token,
-      'platform': _platform(),
-      'updatedAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
-    log('[FCM] Token saved for uid=$uid');
+    try {
+      final docId = _tokenDocId(token);
+      await _db
+          .collection('users')
+          .doc(uid)
+          .collection('fcmTokens')
+          .doc(docId)
+          .set({
+        'token': token,
+        'platform': _platform(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+
+      // Also set the token on the main user document for easy Cloud Function queries
+      await _db.collection('users').doc(uid).set({
+        'fcmToken': token,
+      }, SetOptions(merge: true));
+      log('[FCM] Token saved for uid=$uid');
+    } catch (e) {
+      log('[FCM] Failed to save token for uid=$uid: $e');
+    }
   }
 
   String _tokenDocId(String token) =>

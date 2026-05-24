@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../models/user_model.dart';
 import '../../../../providers/admin_providers.dart';
-
+import '../../../../repositories/admin_repository.dart';
 class AdminMembersTab extends ConsumerStatefulWidget {
   const AdminMembersTab({super.key});
 
@@ -14,6 +14,62 @@ class AdminMembersTab extends ConsumerStatefulWidget {
 
 class _AdminMembersTabState extends ConsumerState<AdminMembersTab> {
   final TextEditingController _searchController = TextEditingController();
+  final Set<String> _selectedIds = {};
+
+  void _toggleSelection(String uid) {
+    setState(() {
+      if (_selectedIds.contains(uid)) {
+        _selectedIds.remove(uid);
+      } else {
+        _selectedIds.add(uid);
+      }
+    });
+  }
+
+  void _clearSelection() {
+    setState(() => _selectedIds.clear());
+  }
+
+  Future<void> _deleteSelected() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: const Text('Delete Members'),
+        content: Text('Are you sure you want to delete ${_selectedIds.length} selected member(s)?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(c, true),
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+    if (confirm == true) {
+      await ref.read(adminRepositoryProvider).deleteUsers(_selectedIds.toList());
+      _clearSelection();
+    }
+  }
+
+  Future<void> _deleteSingle(String uid) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: const Text('Delete Member'),
+        content: const Text('Are you sure you want to delete this member?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(c, true),
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+    if (confirm == true) {
+      await ref.read(adminRepositoryProvider).deleteUser(uid);
+    }
+  }
 
   @override
   void dispose() {
@@ -28,9 +84,30 @@ class _AdminMembersTabState extends ConsumerState<AdminMembersTab> {
 
     return Column(
       children: [
+        // ─── Pending Approvals Button ─────────────────────────────────────
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () => context.push('/admin/approve_members'),
+              icon: const Icon(Icons.how_to_reg, color: Colors.white),
+              label: const Text('Review Pending Registrations'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF4A0404),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
+        ),
+
         // ─── Search Bar ───────────────────────────────────────────────────
         Container(
-          color: const Color(0xFF1A1A1A),
+          color: const Color(0xFF5C0A0A),
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
           child: TextField(
             controller: _searchController,
@@ -64,7 +141,7 @@ class _AdminMembersTabState extends ConsumerState<AdminMembersTab> {
 
         // ─── Filter Chips ─────────────────────────────────────────────────
         Container(
-          color: const Color(0xFF1A1A1A),
+          color: const Color(0xFF5C0A0A),
           padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
@@ -85,7 +162,7 @@ class _AdminMembersTabState extends ConsumerState<AdminMembersTab> {
                       fontSize: 12,
                     ),
                     side: BorderSide.none,
-                    checkmarkColor: AppColors.primaryGold,
+                    checkmarkColor: const Color(0xFF5C0A0A),
                   ),
                 );
               }).toList(),
@@ -93,12 +170,60 @@ class _AdminMembersTabState extends ConsumerState<AdminMembersTab> {
           ),
         ),
 
+        // ─── Selection Bar ────────────────────────────────────────────────
+        if (_selectedIds.isNotEmpty)
+          Container(
+            color: const Color(0xFF2A2A2A),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '${_selectedIds.length} Selected',
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                ),
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.redAccent),
+                      onPressed: _deleteSelected,
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white),
+                      onPressed: _clearSelection,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
         // ─── Results ──────────────────────────────────────────────────────
         Expanded(
           child: searchResults.when(
-            loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryGold)),
+            loading: () => const Center(child: CircularProgressIndicator(color: const Color(0xFF5C0A0A))),
             error: (e, _) => Center(child: Text('Error: $e', style: const TextStyle(color: Colors.red))),
-            data: (users) {
+            data: (unfilteredUsers) {
+              final users = unfilteredUsers.where((u) {
+                // Only show fully registered users (must have displayName) unless looking for pending
+                if (filter == MemberFilter.pending) {
+                  return u.approvalStatus == ApprovalStatus.pending;
+                }
+                
+                // For other filters, user must be approved and have a name
+                if (u.approvalStatus != ApprovalStatus.approved) return false;
+                if (u.displayName == null || u.displayName!.isEmpty) return false;
+
+                if (filter == MemberFilter.active) {
+                  return u.membership?.status == 'active';
+                }
+                if (filter == MemberFilter.expired) {
+                  return u.membership?.status != 'active';
+                }
+                
+                return true;
+              }).toList();
+
               if (users.isEmpty) {
                 return const Center(
                   child: Column(
@@ -117,7 +242,23 @@ class _AdminMembersTabState extends ConsumerState<AdminMembersTab> {
                 itemCount: users.length,
                 itemBuilder: (context, index) {
                   final user = users[index];
-                  return _MemberTile(user: user);
+                  final isSelected = _selectedIds.contains(user.uid);
+                  final isSelectionMode = _selectedIds.isNotEmpty;
+
+                  return _MemberTile(
+                    user: user,
+                    isSelected: isSelected,
+                    isSelectionMode: isSelectionMode,
+                    onTap: () {
+                      if (isSelectionMode) {
+                        _toggleSelection(user.uid);
+                      } else {
+                        context.push('/admin/members/${user.uid}');
+                      }
+                    },
+                    onLongPress: () => _toggleSelection(user.uid),
+                    onDeleteTap: () => _deleteSingle(user.uid),
+                  );
                 },
               );
             },
@@ -139,24 +280,46 @@ class _AdminMembersTabState extends ConsumerState<AdminMembersTab> {
 
 class _MemberTile extends ConsumerWidget {
   final UserModel user;
-  const _MemberTile({required this.user});
+  final bool isSelected;
+  final bool isSelectionMode;
+  final VoidCallback onTap;
+  final VoidCallback onLongPress;
+  final VoidCallback onDeleteTap;
+
+  const _MemberTile({
+    required this.user,
+    required this.isSelected,
+    required this.isSelectionMode,
+    required this.onTap,
+    required this.onLongPress,
+    required this.onDeleteTap,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final subAsync = ref.watch(adminUserSubscriptionProvider(user.uid));
 
     return GestureDetector(
-      onTap: () => context.push('/admin/members/${user.uid}'),
+      onTap: onTap,
+      onLongPress: onLongPress,
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: const Color(0xFF1A1A1A),
+          color: isSelected ? Colors.red.withValues(alpha: 0.1) : const Color(0xFF5C0A0A),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.white10),
+          border: Border.all(color: isSelected ? Colors.redAccent : Colors.white10),
         ),
         child: Row(
           children: [
+            if (isSelectionMode)
+              Padding(
+                padding: const EdgeInsets.only(right: 12),
+                child: Icon(
+                  isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
+                  color: isSelected ? Colors.redAccent : Colors.white54,
+                ),
+              ),
             // Avatar
             CircleAvatar(
               radius: 24,
@@ -164,8 +327,8 @@ class _MemberTile extends ConsumerWidget {
               backgroundImage: user.photoUrl != null ? NetworkImage(user.photoUrl!) : null,
               child: user.photoUrl == null
                   ? Text(
-                      (user.displayName ?? 'U').substring(0, 1).toUpperCase(),
-                      style: const TextStyle(color: AppColors.primaryGold, fontWeight: FontWeight.bold, fontSize: 18),
+                      (user.displayName?.isNotEmpty == true ? user.displayName! : 'U').substring(0, 1).toUpperCase(),
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
                     )
                   : null,
             ),
@@ -206,7 +369,11 @@ class _MemberTile extends ConsumerWidget {
               ),
             ),
 
-            const Icon(Icons.chevron_right, color: Colors.grey),
+            if (!isSelectionMode)
+              IconButton(
+                icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                onPressed: onDeleteTap,
+              ),
           ],
         ),
       ),

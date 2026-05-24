@@ -38,7 +38,7 @@ class EventDetailScreen extends ConsumerWidget {
                   title: Text(
                     event.title,
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: const Color(0xFF5C0A0A),
                       shadows: [Shadow(color: Colors.black54, blurRadius: 4)],
                     ),
                   ),
@@ -204,7 +204,7 @@ class EventDetailScreen extends ConsumerWidget {
     return Container(
       color: AppColors.primaryMaroon,
       child: const Center(
-        child: Icon(Icons.event, size: 80, color: Colors.white38),
+        child: Icon(Icons.event, size: 80, color: const Color(0x665C0A0A)),
       ),
     );
   }

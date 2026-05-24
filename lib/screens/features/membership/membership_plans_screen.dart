@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/features/membership_providers.dart';
@@ -32,19 +34,52 @@ class MembershipPlansScreen extends ConsumerWidget {
     );
   }
 
+  void _showDonationDialog(BuildContext context, WidgetRef ref) {
+    final amountController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Make a Donation'),
+        content: TextField(
+          controller: amountController,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(
+            labelText: 'Amount (₹)',
+            prefixText: '₹ ',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          FilledButton(
+            onPressed: () {
+              final amount = double.tryParse(amountController.text);
+              if (amount != null && amount > 0) {
+                Navigator.pop(context);
+                _showPaymentSheet(context, ref, 'Voluntary Donation', amount, 0);
+              }
+            },
+            style: FilledButton.styleFrom(backgroundColor: AppColors.primaryMaroon),
+            child: const Text('Donate'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Membership Plans'),
+        title: const Text('Membership & Donations'),
         backgroundColor: AppColors.primaryMaroon,
-        foregroundColor: Colors.white,
+        foregroundColor: const Color(0xFF5C0A0A),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           const Text(
-            'Choose a plan that fits you best',
+            'Choose your membership or make a donation',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             textAlign: TextAlign.center,
           ),
@@ -53,46 +88,30 @@ class MembershipPlansScreen extends ConsumerWidget {
             title: 'Annual Plan',
             price: '₹500',
             duration: '/ year',
-            description: 'Basic membership for individuals.',
+            description: 'Basic membership for individuals and families.',
             features: const [
               'Access to all regular events',
-              'Single voting right',
+              'Voting rights in meetings',
               'Digital ID Card',
             ],
             color: const Color(0xFF1565C0), // Blue
+            isPopular: true,
             onPressed: () => _showPaymentSheet(context, ref, 'Annual Plan', 500, 365),
           ),
           const SizedBox(height: 16),
           _PlanCard(
-            title: 'Family Plan',
-            price: '₹1000',
-            duration: '/ year',
-            description: 'Best for families.',
+            title: 'Make a Donation',
+            price: 'Custom',
+            duration: ' amount',
+            description: 'Support the Samiti voluntarily.',
             features: const [
-              'Add up to 4 family members',
-              'Access to all regular events',
-              'Priority seating at events',
-              'Digital ID Cards for family',
+              'Contribute to community development',
+              'Support cultural and welfare events',
+              'Strengthen our Telugu community',
             ],
-            color: AppColors.primaryMaroon,
-            isPopular: true,
-            onPressed: () => _showPaymentSheet(context, ref, 'Family Plan', 1000, 365),
-          ),
-          const SizedBox(height: 16),
-          _PlanCard(
-            title: 'Lifetime Member',
-            price: '₹5000',
-            duration: ' one-time',
-            description: 'Support the Samiti for life.',
-            features: const [
-              'Lifetime access to events',
-              'VIP seating & special recognition',
-              'Free family member additions',
-              'Premium Gold ID Card',
-            ],
-            color: AppColors.primaryGold,
-            textColor: Colors.black,
-            onPressed: () => _showPaymentSheet(context, ref, 'Lifetime Member', 5000, 36500),
+            color: const Color(0xFF5C0A0A),
+            textColor: Colors.white,
+            onPressed: () => _showDonationDialog(context, ref),
           ),
         ],
       ),
@@ -131,7 +150,7 @@ class _PlanCard extends StatelessWidget {
         Card(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
-            side: isPopular ? const BorderSide(color: AppColors.primaryGold, width: 2) : BorderSide.none,
+            side: isPopular ? const BorderSide(color: const Color(0xFF5C0A0A), width: 2) : BorderSide.none,
           ),
           elevation: isPopular ? 8 : 2,
           child: Column(
@@ -205,7 +224,7 @@ class _PlanCard extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: AppColors.primaryGold,
+                color: const Color(0xFF5C0A0A),
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2))],
               ),
@@ -240,9 +259,15 @@ class _PaymentBottomSheet extends ConsumerStatefulWidget {
 }
 
 class _PaymentBottomSheetState extends ConsumerState<_PaymentBottomSheet> {
-  String _selectedMethod = 'UPI';
+  final _utrController = TextEditingController();
   bool _isProcessing = false;
   bool _isFinished = false;
+
+  @override
+  void dispose() {
+    _utrController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -265,175 +290,218 @@ class _PaymentBottomSheetState extends ConsumerState<_PaymentBottomSheet> {
       },
     );
 
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-      child: SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            if (_isFinished) ...[
-              const Icon(Icons.check_circle, color: AppColors.success, size: 64),
-              const SizedBox(height: 16),
-              const Text(
-                'Payment Successful!',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Colors.black),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Your subscription to ${widget.planName} is now active.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey[600]),
-              ),
-              const SizedBox(height: 24),
-              FilledButton(
-                onPressed: () {
-                  Navigator.pop(context); // Close bottom sheet
-                  Navigator.pop(context); // Close plans screen
-                },
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.primaryMaroon,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                child: const Text('Back to Membership'),
-              ),
-            ] else if (_isProcessing) ...[
-              const SizedBox(height: 32),
-              const Center(
-                child: CircularProgressIndicator(color: AppColors.primaryMaroon),
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                'Processing Payment...',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Please do not close the app or go back.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey[500], fontSize: 12),
-              ),
-              const SizedBox(height: 32),
-            ] else ...[
-              Text(
-                'Payment Details',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(widget.planName, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 16)),
-                  Text('₹${widget.amount.toStringAsFixed(0)}',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.primaryMaroon)),
-                ],
-              ),
-              const Divider(height: 24),
-              const Text('Choose Payment Method', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-              const SizedBox(height: 12),
-              _PaymentMethodOption(
-                title: 'UPI (GPay / PhonePe / Paytm)',
-                value: 'UPI',
-                groupValue: _selectedMethod,
-                icon: Icons.account_balance_wallet_outlined,
-                onChanged: (val) => setState(() => _selectedMethod = val!),
-              ),
-              _PaymentMethodOption(
-                title: 'Credit / Debit Card',
-                value: 'Card',
-                groupValue: _selectedMethod,
-                icon: Icons.credit_card_outlined,
-                onChanged: (val) => setState(() => _selectedMethod = val!),
-              ),
-              _PaymentMethodOption(
-                title: 'Net Banking',
-                value: 'NetBanking',
-                groupValue: _selectedMethod,
-                icon: Icons.account_balance_outlined,
-                onChanged: (val) => setState(() => _selectedMethod = val!),
-              ),
-              const SizedBox(height: 24),
-              FilledButton(
-                onPressed: () {
-                  setState(() => _isProcessing = true);
-                  Future.delayed(const Duration(seconds: 1), () {
-                    ref.read(membershipPurchaseNotifierProvider.notifier).purchasePlan(
-                          userId: widget.userId,
-                          userName: widget.userName,
-                          planName: widget.planName,
-                          amount: widget.amount,
-                          durationInDays: widget.durationInDays,
-                        );
-                  });
-                },
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.primaryMaroon,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                child: Text('Pay ₹${widget.amount.toStringAsFixed(0)}',
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              ),
-            ],
-          ],
-        ),
-      ),
+    // Exact parameters extracted from the official QR Code
+    // Exact parameters extracted from the official QR Code
+    final upiId = 'ppr.01440.17112023.00267096@cnrb';
+    final payeeName = 'Canara Bank';
+    // Generate a unique transaction reference to prevent duplicate transaction errors
+    final uniqueTr = 'TR${DateTime.now().millisecondsSinceEpoch}';
+    
+    // Build the URI safely using queryParameters
+    final Uri upiUri = Uri(
+      scheme: 'upi',
+      host: 'pay',
+      queryParameters: {
+        'pa': upiId,
+        'pn': payeeName,
+        'mc': '7399',
+        'tr': uniqueTr,
+        'am': widget.amount.toStringAsFixed(2),
+        'mam': '0',
+        'cu': 'INR',
+        'refUrl': 'http://npci.org/upi/schema/'
+      },
     );
-  }
-}
 
-class _PaymentMethodOption extends StatelessWidget {
-  final String title;
-  final String value;
-  final String groupValue;
-  final IconData icon;
-  final ValueChanged<String?> onChanged;
-
-  const _PaymentMethodOption({
-    required this.title,
-    required this.value,
-    required this.groupValue,
-    required this.icon,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isSelected = value == groupValue;
-    return Card(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: isSelected ? AppColors.primaryMaroon : Colors.grey.shade200,
-          width: isSelected ? 2 : 1,
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
-      ),
-      elevation: 0,
-      margin: const EdgeInsets.only(bottom: 8),
-      child: RadioListTile<String>(
-        value: value,
-        groupValue: groupValue,
-        onChanged: onChanged,
-        activeColor: AppColors.primaryMaroon,
-        title: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-        secondary: Icon(icon, color: isSelected ? AppColors.primaryMaroon : Colors.grey),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                if (_isFinished) ...[
+                  const Icon(Icons.check_circle, color: AppColors.success, size: 64),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Payment Submitted!',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Colors.black),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Your payment details for ${widget.planName} have been recorded and will be verified by the admin.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.grey[600]),
+                  ),
+                  const SizedBox(height: 24),
+                  FilledButton(
+                    onPressed: () {
+                      Navigator.pop(context); // Close bottom sheet
+                      Navigator.pop(context); // Close plans screen
+                    },
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.primaryMaroon,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: const Text('Done'),
+                  ),
+                ] else if (_isProcessing) ...[
+                  const SizedBox(height: 32),
+                  const Center(
+                    child: CircularProgressIndicator(color: AppColors.primaryMaroon),
+                  ),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'Submitting Details...',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16, color: Colors.black),
+                  ),
+                  const SizedBox(height: 32),
+                ] else ...[
+                  Text(
+                    'Complete Payment',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: Colors.black),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Scan the QR code using GPay, PhonePe, or Paytm to pay ₹${widget.amount.toStringAsFixed(0)}',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.grey[700], fontSize: 13),
+                  ),
+                  const SizedBox(height: 20),
+                  
+                  // QR Code Image
+                  Center(
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.grey.shade300),
+                        boxShadow: [
+                          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.asset(
+                          'assets/images/samiti_qr.png',
+                          width: 200,
+                          height: 250, // Added height because the uploaded image is rectangular
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Center(
+                    child: Text(
+                      'UPI ID: $upiId',
+                      style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 12, color: Colors.black87),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Pay via UPI App Button
+                  OutlinedButton.icon(
+                    onPressed: () async {
+                      try {
+                        await launchUrl(upiUri, mode: LaunchMode.externalApplication);
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Could not open UPI app. Please scan the QR manually.')),
+                          );
+                        }
+                      }
+                    },
+                    icon: const Icon(Icons.touch_app, color: AppColors.primaryMaroon),
+                    label: const Text(
+                      'Pay via GPay / PhonePe / Paytm',
+                      style: TextStyle(color: AppColors.primaryMaroon, fontWeight: FontWeight.bold),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      side: const BorderSide(color: AppColors.primaryMaroon, width: 1.5),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  // UTR Input
+                  TextField(
+                    controller: _utrController,
+                    keyboardType: TextInputType.text,
+                    style: const TextStyle(color: Colors.black),
+                    decoration: InputDecoration(
+                      labelText: 'Enter UTR / Reference No.',
+                      labelStyle: TextStyle(color: Colors.grey.shade600),
+                      hintText: 'e.g., 312345678901',
+                      hintStyle: TextStyle(color: Colors.grey.shade400),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: AppColors.primaryMaroon, width: 2),
+                      ),
+                      prefixIcon: const Icon(Icons.receipt_long, color: Colors.grey),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  FilledButton(
+                    onPressed: () {
+                      if (_utrController.text.trim().isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Please enter the UTR / Reference number after payment')),
+                        );
+                        return;
+                      }
+                      
+                      setState(() => _isProcessing = true);
+                      
+                      // For now, we reuse the existing purchasePlan method. 
+                      // In a real scenario, this would create a pending transaction record with the UTR.
+                      ref.read(membershipPurchaseNotifierProvider.notifier).purchasePlan(
+                            userId: widget.userId,
+                            userName: widget.userName,
+                            planName: widget.planName,
+                            amount: widget.amount,
+                            durationInDays: widget.durationInDays,
+                          );
+                    },
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.primaryMaroon,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: const Text('Submit Payment Details',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

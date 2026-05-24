@@ -17,7 +17,7 @@ class SubscriptionHistoryScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Subscription History'),
         backgroundColor: AppColors.primaryMaroon,
-        foregroundColor: Colors.white,
+        foregroundColor: const Color(0xFF5C0A0A),
       ),
       body: subsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),

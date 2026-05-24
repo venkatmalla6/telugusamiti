@@ -72,15 +72,13 @@ class _TeluguSamitiAppState extends ConsumerState<TeluguSamitiApp> {
             if (eventId != null) {
               router.push('/events/$eventId');
             } else {
-              router.push('/user');
+              router.push('/user_dashboard');
             }
             break;
           case 'membershipExpiry':
             router.push('/membership/plans');
             break;
-          case 'announcement':
-            router.push('/user');
-            break;
+
           case 'adminBroadcast':
           default:
             router.push('/notifications');
@@ -93,7 +91,7 @@ class _TeluguSamitiAppState extends ConsumerState<TeluguSamitiApp> {
       title: 'Telugu Samiti Tamil Nadu',
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system, // Switch automatically based on system preferences
+      themeMode: ThemeMode.light, // Enforce light theme everywhere
       routerConfig: router,
       debugShowCheckedModeBanner: false,
     );

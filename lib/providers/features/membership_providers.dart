@@ -100,5 +100,22 @@ final subscriptionHistoryProvider = FutureProvider.autoDispose<List<Subscription
   if (user == null) return [];
   
   final repo = ref.watch(paymentRepositoryProvider);
-  return repo.getUserSubscriptions(user.uid);
+  final subs = await repo.getUserSubscriptions(user.uid);
+
+  // Inject the manually uploaded/legacy membership so it shows in the history list!
+  if (user.membership != null) {
+    subs.insert(0, SubscriptionModel(
+      id: 'bulk_upload_membership',
+      userId: user.uid,
+      planName: 'Manual Membership',
+      amount: user.membership!.amount,
+      startDate: user.membership!.paymentDate,
+      endDate: user.membership!.renewalDate,
+      status: user.membership!.renewalDate.isAfter(DateTime.now()) 
+          ? SubscriptionStatus.active 
+          : SubscriptionStatus.expired,
+    ));
+  }
+
+  return subs;
 });

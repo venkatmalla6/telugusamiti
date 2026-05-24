@@ -56,7 +56,7 @@ class _AdminSendNotificationScreenState extends ConsumerState<AdminSendNotificat
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0D0D),
+      backgroundColor: const Color(0xFFFAF2E6),
       appBar: AppBar(
         backgroundColor: AppColors.primaryMaroon,
         foregroundColor: Colors.white,
@@ -86,7 +86,7 @@ class _AdminSendNotificationScreenState extends ConsumerState<AdminSendNotificat
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Broadcast Notification', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                          Text('Broadcast Notification', style: TextStyle(color: const Color(0xFF5C0A0A), fontWeight: FontWeight.bold)),
                           Text(
                             'This message will be sent to all members in the app.',
                             style: TextStyle(color: Colors.grey, fontSize: 12),
@@ -100,7 +100,7 @@ class _AdminSendNotificationScreenState extends ConsumerState<AdminSendNotificat
 
               const SizedBox(height: 28),
 
-              const Text('Notification Title', style: TextStyle(color: Colors.white70, fontWeight: FontWeight.w600, fontSize: 13)),
+              Text('Notification Title', style: TextStyle(color: const Color(0xB35C0A0A), fontWeight: FontWeight.w600, fontSize: 13)),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _titleCtrl,
@@ -111,7 +111,7 @@ class _AdminSendNotificationScreenState extends ConsumerState<AdminSendNotificat
 
               const SizedBox(height: 20),
 
-              const Text('Message Body', style: TextStyle(color: Colors.white70, fontWeight: FontWeight.w600, fontSize: 13)),
+              Text('Message Body', style: TextStyle(color: const Color(0xB35C0A0A), fontWeight: FontWeight.w600, fontSize: 13)),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _bodyCtrl,
@@ -133,7 +133,7 @@ class _AdminSendNotificationScreenState extends ConsumerState<AdminSendNotificat
                       : const Icon(Icons.send_rounded, color: Colors.white),
                   label: Text(
                     _isLoading ? 'Sending...' : 'Send to All Members',
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                   ),
                   style: FilledButton.styleFrom(backgroundColor: AppColors.primaryMaroon),
                 ),
@@ -151,14 +151,14 @@ class _AdminSendNotificationScreenState extends ConsumerState<AdminSendNotificat
       hintStyle: const TextStyle(color: Colors.grey),
       prefixIcon: Icon(icon, color: Colors.grey),
       filled: true,
-      fillColor: const Color(0xFF1A1A1A),
+      fillColor: const Color(0xFF5C0A0A),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Colors.white12),
+        borderSide: const BorderSide(color: const Color(0x4DD4AF37)),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Colors.white12),
+        borderSide: const BorderSide(color: const Color(0x4DD4AF37)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),

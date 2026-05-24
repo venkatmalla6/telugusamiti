@@ -27,7 +27,7 @@ class AlbumViewScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(album.title),
         backgroundColor: AppColors.primaryMaroon,
-        foregroundColor: Colors.white,
+        foregroundColor: const Color(0xFF5C0A0A),
         actions: [
           if (canManage)
             IconButton(
@@ -78,8 +78,8 @@ class AlbumViewScreen extends ConsumerWidget {
           ? FloatingActionButton.extended(
               onPressed: () => context.push('/gallery/album/${album.id}/add_media'),
               backgroundColor: AppColors.primaryMaroon,
-              icon: const Icon(Icons.add, color: Colors.white),
-              label: const Text('Add Media', style: TextStyle(color: Colors.white)),
+              icon: const Icon(Icons.add, color: const Color(0xFF5C0A0A)),
+              label: const Text('Add Media', style: TextStyle(color: const Color(0xFF5C0A0A))),
             )
           : null,
     );
@@ -106,7 +106,7 @@ class AlbumViewScreen extends ConsumerWidget {
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (_) => const Center(child: CircularProgressIndicator(color: AppColors.primaryGold)),
+        builder: (_) => const Center(child: CircularProgressIndicator(color: const Color(0xFF5C0A0A))),
       );
       
       try {
@@ -150,11 +150,11 @@ class _MediaTile extends ConsumerWidget {
           ),
           if (item.type == 'video')
             const Center(
-              child: Icon(Icons.play_circle_fill, color: Colors.white, size: 36),
+              child: Icon(Icons.play_circle_fill, color: const Color(0xFF5C0A0A), size: 36),
             ),
           if (item.type == 'drive_link')
             const Center(
-              child: Icon(Icons.link, color: Colors.white, size: 36),
+              child: Icon(Icons.link, color: const Color(0xFF5C0A0A), size: 36),
             ),
         ],
       ),
@@ -192,7 +192,7 @@ class _MediaTile extends ConsumerWidget {
               top: 40,
               right: 16,
               child: IconButton(
-                icon: const Icon(Icons.close, color: Colors.white, size: 32),
+                icon: const Icon(Icons.close, color: const Color(0xFF5C0A0A), size: 32),
                 onPressed: () => Navigator.pop(ctx),
               ),
             ),
@@ -203,7 +203,7 @@ class _MediaTile extends ConsumerWidget {
                 right: 16,
                 child: Text(
                   item.caption!,
-                  style: const TextStyle(color: Colors.white, fontSize: 16, shadows: [Shadow(blurRadius: 4)]),
+                  style: const TextStyle(color: const Color(0xFF5C0A0A), fontSize: 16, shadows: [Shadow(blurRadius: 4)]),
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -216,7 +216,7 @@ class _MediaTile extends ConsumerWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.edit, color: Colors.white),
+                      icon: const Icon(Icons.edit, color: const Color(0xFF5C0A0A)),
                       onPressed: () => _editCaption(ctx, ref),
                       tooltip: 'Edit Caption',
                     ),
@@ -240,11 +240,11 @@ class _MediaTile extends ConsumerWidget {
       return Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.drive_file_move, color: Colors.white, size: 64),
+          const Icon(Icons.drive_file_move, color: const Color(0xFF5C0A0A), size: 64),
           const SizedBox(height: 16),
           Text(item.downloadUrl, style: const TextStyle(color: Colors.blue, decoration: TextDecoration.underline), textAlign: TextAlign.center),
           const SizedBox(height: 8),
-          const Text('(Tap link to open in browser)', style: TextStyle(color: Colors.white70)),
+          Text('(Tap link to open in browser)', style: TextStyle(color: const Color(0xB35C0A0A))),
         ],
       );
     } else if (item.type == 'video') {
@@ -339,7 +339,7 @@ class _VideoPlayerItemState extends State<_VideoPlayerItem> {
         return Center(
           child: Text(
             errorMessage,
-            style: const TextStyle(color: Colors.white),
+            style: const TextStyle(color: const Color(0xFF5C0A0A)),
           ),
         );
       },

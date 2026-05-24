@@ -126,14 +126,14 @@ class _AddMediaScreenState extends ConsumerState<AddMediaScreen> {
       appBar: AppBar(
         title: const Text('Add Media'),
         backgroundColor: AppColors.primaryMaroon,
-        foregroundColor: Colors.white,
+        foregroundColor: const Color(0xFF5C0A0A),
       ),
       body: _isUploading
           ? const Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  CircularProgressIndicator(color: AppColors.primaryGold),
+                  CircularProgressIndicator(color: const Color(0xFF5C0A0A)),
                   SizedBox(height: 16),
                   Text('Uploading media...', style: TextStyle(fontWeight: FontWeight.bold)),
                 ],
@@ -244,7 +244,7 @@ class _AddMediaScreenState extends ConsumerState<AddMediaScreen> {
                     ElevatedButton(
                       onPressed: _uploadAll,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryGold,
+                        backgroundColor: const Color(0xFF5C0A0A),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
                       child: const Text('Upload to Album', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 16)),

@@ -38,8 +38,8 @@ class AdminSettingsTab extends ConsumerWidget {
                     backgroundImage: user?.photoUrl != null ? NetworkImage(user!.photoUrl!) : null,
                     child: user?.photoUrl == null
                         ? Text(
-                            (user?.displayName ?? 'A').substring(0, 1).toUpperCase(),
-                            style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                            (user?.displayName?.isNotEmpty == true ? user!.displayName! : 'A').substring(0, 1).toUpperCase(),
+                            style: const TextStyle(color: const Color(0xFF5C0A0A), fontSize: 24, fontWeight: FontWeight.bold),
                           )
                         : null,
                   ),
@@ -50,7 +50,7 @@ class AdminSettingsTab extends ConsumerWidget {
                       children: [
                         Text(
                           user?.displayName ?? 'Admin',
-                          style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                          style: const TextStyle(color: const Color(0xFF5C0A0A), fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                         Text(user?.email ?? user?.phoneNumber ?? '', style: const TextStyle(color: Colors.grey, fontSize: 13)),
                         const SizedBox(height: 6),
@@ -62,7 +62,7 @@ class AdminSettingsTab extends ConsumerWidget {
                           ),
                           child: Text(
                             user?.role.name.toUpperCase() ?? 'ADMIN',
-                            style: const TextStyle(color: AppColors.primaryGold, fontSize: 11, fontWeight: FontWeight.bold),
+                            style: const TextStyle(color: const Color(0xFF5C0A0A), fontSize: 11, fontWeight: FontWeight.bold),
                           ),
                         ),
                       ],
@@ -78,23 +78,17 @@ class AdminSettingsTab extends ConsumerWidget {
           const SizedBox(height: 24),
 
           // ─── Admin Actions ─────────────────────────────────────────────
-          const Text('Admin Tools', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+          const Text('Admin Tools', style: TextStyle(color: const Color(0xFF5C0A0A), fontSize: 16, fontWeight: FontWeight.bold)),
           const SizedBox(height: 12),
 
           _SettingsTile(
             icon: Icons.notifications_rounded,
             iconColor: Colors.blue,
-            title: 'Send Notification',
-            subtitle: 'Broadcast a message to all members',
-            onTap: () => context.push('/admin/notifications/send'),
+            title: 'Manage Notifications',
+            subtitle: 'Send, edit, or delete global notifications',
+            onTap: () => context.push('/admin/notifications/manage'),
           ),
-          _SettingsTile(
-            icon: Icons.campaign_rounded,
-            iconColor: Colors.orange,
-            title: 'Create Announcement',
-            subtitle: 'Post a new announcement for all users',
-            onTap: () => context.push('/admin/create-announcement'),
-          ),
+
           _SettingsTile(
             icon: Icons.event_rounded,
             iconColor: AppColors.primaryMaroon,
@@ -111,16 +105,23 @@ class AdminSettingsTab extends ConsumerWidget {
           ),
           _SettingsTile(
             icon: Icons.qr_code_scanner_rounded,
-            iconColor: AppColors.primaryGold,
+            iconColor: const Color(0xFF5C0A0A),
             title: 'Scan QR / Validate Token',
             subtitle: 'Scan event and food QR codes',
             onTap: () => context.push('/volunteer/scan'),
+          ),
+          _SettingsTile(
+            icon: Icons.upload_file_rounded,
+            iconColor: Colors.green,
+            title: 'Bulk Membership Upload',
+            subtitle: 'Upload Excel files for subscriptions',
+            onTap: () => context.push('/admin/bulk_upload'),
           ),
 
           const SizedBox(height: 24),
 
           // ─── Danger Zone ────────────────────────────────────────────────
-          const Text('Account', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+          const Text('Account', style: TextStyle(color: const Color(0xFF5C0A0A), fontSize: 16, fontWeight: FontWeight.bold)),
           const SizedBox(height: 12),
 
           _SettingsTile(
@@ -162,7 +163,7 @@ class _SettingsTile extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
+        color: const Color(0xFF5C0A0A),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.white10),
       ),

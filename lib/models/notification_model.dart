@@ -3,7 +3,6 @@ import '../core/utils/firebase_timestamp_converters.dart';
 enum NotificationType {
   eventReminder,
   membershipExpiry,
-  announcement,
   adminBroadcast,
   general,
 }
@@ -15,8 +14,7 @@ extension NotificationTypeX on NotificationType {
         return 'Event Reminder';
       case NotificationType.membershipExpiry:
         return 'Membership Expiry';
-      case NotificationType.announcement:
-        return 'Announcement';
+
       case NotificationType.adminBroadcast:
         return 'Admin Broadcast';
       case NotificationType.general:
@@ -30,8 +28,7 @@ extension NotificationTypeX on NotificationType {
         return NotificationType.eventReminder;
       case 'membershipExpiry':
         return NotificationType.membershipExpiry;
-      case 'announcement':
-        return NotificationType.announcement;
+
       case 'adminBroadcast':
         return NotificationType.adminBroadcast;
       default:

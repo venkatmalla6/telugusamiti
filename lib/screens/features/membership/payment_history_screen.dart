@@ -17,7 +17,7 @@ class PaymentHistoryScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Payment History'),
         backgroundColor: AppColors.primaryMaroon,
-        foregroundColor: Colors.white,
+        foregroundColor: const Color(0xFF5C0A0A),
       ),
       body: paymentsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),

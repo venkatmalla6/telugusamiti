@@ -83,6 +83,27 @@ class AdminRepository {
     await FirebaseFirestore.instance.collection('users').doc(uid).update({'role': role.name});
   }
 
+  Future<void> deleteUser(String uid) async {
+    await _userService.delete(uid);
+  }
+
+  Future<void> deleteUsers(List<String> uids) async {
+    final db = FirebaseFirestore.instance;
+    int i = 0;
+    WriteBatch batch = db.batch();
+    for (final uid in uids) {
+      batch.delete(db.collection('users').doc(uid));
+      i++;
+      if (i % 500 == 0) {
+        await batch.commit();
+        batch = db.batch();
+      }
+    }
+    if (i % 500 != 0) {
+      await batch.commit();
+    }
+  }
+
   /// Search users by displayName prefix (client-side filter for Firestore free tier)
   Future<List<UserModel>> searchUsersByName(String query) async {
     final all = await _userService.getAll();
@@ -111,6 +132,8 @@ class AdminRepository {
   Future<List<SubscriptionModel>> getAllActiveSubscriptions() async {
     return await _subscriptionService.getWhere(field: 'status', isEqualTo: 'active');
   }
+
+
 
   // ─── Payment Management ─────────────────────────────────────────────────────
 
@@ -141,7 +164,14 @@ class AdminRepository {
   // ─── Analytics ──────────────────────────────────────────────────────────────
 
   Future<Map<String, int>> getAnalyticsStats() async {
-    final users = await _userService.getAll();
+    final allUsers = await _userService.getAll();
+    // Only count approved users who have completed registration
+    final registeredUsers = allUsers.where((u) => 
+      u.approvalStatus == ApprovalStatus.approved && 
+      u.displayName != null && 
+      u.displayName!.isNotEmpty
+    ).toList();
+    
     final activeSubs = await getAllActiveSubscriptions();
     final payments = await getAllPayments();
     final events = await FirebaseFirestore.instance.collection('events').get();
@@ -152,7 +182,7 @@ class AdminRepository {
         .toInt();
 
     return {
-      'totalMembers': users.length,
+      'totalMembers': registeredUsers.length,
       'activeSubscriptions': activeSubs.length,
       'totalEvents': events.docs.length,
       'totalCollection': totalCollection,
@@ -166,12 +196,12 @@ class AdminRepository {
     required String body,
     required String sentBy,
   }) async {
-    final users = await _userService.getAll();
-    final batch = FirebaseFirestore.instance.batch();
+    final users = await getAllUsers();
+    final db = FirebaseFirestore.instance;
     
-    // Save to global/root notifications
-    final globalRef = FirebaseFirestore.instance.collection('notifications').doc();
-    batch.set(globalRef, {
+    // Save to global/root notifications as well (for audit/history)
+    final globalRef = db.collection('notifications').doc();
+    final notifData = {
       'title': title,
       'body': body,
       'isRead': false,
@@ -179,29 +209,90 @@ class AdminRepository {
       'type': NotificationType.adminBroadcast.name,
       'topic': 'all_users',
       'data': {'sentBy': sentBy},
-    });
+    };
+    
+    await globalRef.set(notifData);
 
+    // Fan-out to all users' individual notification collections
+    // Firestore batch writes are limited to 500 operations.
+    int i = 0;
+    WriteBatch batch = db.batch();
+    
     for (final user in users) {
-      final ref = FirebaseFirestore.instance
+      if (user.uid.isEmpty) continue;
+      
+      final userNotifRef = db
           .collection('users')
           .doc(user.uid)
           .collection('notifications')
-          .doc();
-      batch.set(ref, {
+          .doc(globalRef.id);
+          
+      batch.set(userNotifRef, notifData);
+      i++;
+      
+      // Commit and start a new batch if we reach 500
+      if (i % 500 == 0) {
+        await batch.commit();
+        batch = db.batch();
+      }
+    }
+    
+    // Commit any remaining operations
+    if (i % 500 != 0) {
+      await batch.commit();
+    }
+  }
+
+  Future<void> updateNotification(String id, String title, String body) async {
+    final users = await getAllUsers();
+    final db = FirebaseFirestore.instance;
+
+    await db.collection('notifications').doc(id).update({
+      'title': title,
+      'body': body,
+    });
+
+    int i = 0;
+    WriteBatch batch = db.batch();
+    for (final user in users) {
+      if (user.uid.isEmpty) continue;
+      final ref = db.collection('users').doc(user.uid).collection('notifications').doc(id);
+      batch.update(ref, {
         'title': title,
         'body': body,
-        'isRead': false,
-        'createdAt': FieldValue.serverTimestamp(),
-        'type': NotificationType.adminBroadcast.name,
-        'topic': 'all_users',
-        'targetUid': user.uid,
-        'data': {
-          'sentBy': sentBy,
-          'globalNotificationId': globalRef.id,
-        },
       });
+      i++;
+      if (i % 500 == 0) {
+        await batch.commit();
+        batch = db.batch();
+      }
     }
-    await batch.commit();
+    if (i % 500 != 0) {
+      await batch.commit();
+    }
+  }
+
+  Future<void> deleteNotification(String id) async {
+    final users = await getAllUsers();
+    final db = FirebaseFirestore.instance;
+
+    await db.collection('notifications').doc(id).delete();
+
+    int i = 0;
+    WriteBatch batch = db.batch();
+    for (final user in users) {
+      if (user.uid.isEmpty) continue;
+      final ref = db.collection('users').doc(user.uid).collection('notifications').doc(id);
+      batch.delete(ref);
+      i++;
+      if (i % 500 == 0) {
+        await batch.commit();
+        batch = db.batch();
+      }
+    }
+    if (i % 500 != 0) {
+      await batch.commit();
+    }
   }
 
   Future<void> clearAllTestData() async {
@@ -210,5 +301,76 @@ class AdminRepository {
     await FirestoreService<dynamic>(collectionPath: 'gallery', fromMap: (_, __) => null, toMap: (_) => {}).clearCollection();
     await FirestoreService<dynamic>(collectionPath: 'subscriptions', fromMap: (_, __) => null, toMap: (_) => {}).clearCollection();
     await FirestoreService<dynamic>(collectionPath: 'payments', fromMap: (_, __) => null, toMap: (_) => {}).clearCollection();
+  }
+  Future<Map<String, dynamic>> bulkUploadMembership(List<Map<String, dynamic>> parsedData) async {
+    final batch = FirebaseFirestore.instance.batch();
+    int successCount = 0;
+    int errorCount = 0;
+    List<String> errors = [];
+
+    for (var row in parsedData) {
+      try {
+        final String uidStr = row['UserId']?.toString().trim() ?? '';
+        final DateTime? paymentDate = row['PaymentDate'] as DateTime?;
+        final double amount = (row['Amount'] as num?)?.toDouble() ?? 0.0;
+
+        if (uidStr.isEmpty || paymentDate == null) {
+          errorCount++;
+          errors.add("Invalid row data: Missing UserId or PaymentDate.");
+          continue;
+        }
+
+        String finalUid = uidStr;
+        
+        // Match by legacy User ID (what the Excel has) to the actual Firebase UID if they are registered
+        final matchedLegacy = await _userService.getWhere(field: 'legacyUserId', isEqualTo: uidStr);
+        if (matchedLegacy.isNotEmpty) {
+          finalUid = matchedLegacy.first.uid;
+        } else {
+          // If not found by legacy, check if they used their real UID in the Excel
+          final matchedUid = await _userService.getById(uidStr);
+          if (matchedUid != null) {
+            finalUid = matchedUid.uid;
+          }
+        }
+
+        final renewalDate = DateTime(paymentDate.year + 1, paymentDate.month, paymentDate.day);
+        final isExpired = renewalDate.isBefore(DateTime.now());
+
+        final membershipData = {
+          'paymentDate': Timestamp.fromDate(paymentDate),
+          'renewalDate': Timestamp.fromDate(renewalDate),
+          'amount': amount,
+          'status': isExpired ? 'expired' : 'active',
+        };
+
+        // Update the user's document directly with the membership map
+        final userRef = FirebaseFirestore.instance.collection('users').doc(finalUid);
+        batch.set(userRef, {
+          'membership': membershipData,
+          if (finalUid != uidStr) 'legacyUserId': uidStr, 
+        }, SetOptions(merge: true));
+
+        successCount++;
+      } catch (e) {
+        errorCount++;
+        errors.add("Error processing row: $e");
+      }
+    }
+
+    if (successCount > 0) {
+      await batch.commit();
+    }
+
+    return {
+      'successCount': successCount,
+      'errorCount': errorCount,
+      'errors': errors,
+    };
+  }
+
+  Future<List<UserModel>> getAllUsersWithMembership() async {
+    final users = await _userService.getAll();
+    return users.where((u) => u.membership != null).toList();
   }
 }

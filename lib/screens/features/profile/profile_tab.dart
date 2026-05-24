@@ -71,6 +71,32 @@ class ProfileTab extends ConsumerWidget {
                       user?.email ?? user?.phoneNumber ?? '',
                       style: TextStyle(color: Colors.grey[600], fontSize: 14),
                     ),
+                    if (user != null)
+                      Container(
+                        margin: const EdgeInsets.only(top: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.grey.shade300),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.badge_outlined, size: 14, color: Colors.grey.shade700),
+                            const SizedBox(width: 6),
+                            Text(
+                              'ID: ${user.legacyUserId?.isNotEmpty == true ? user.legacyUserId : user.uid}',
+                              style: TextStyle(
+                                color: Colors.grey.shade800, 
+                                fontSize: 12, 
+                                fontWeight: FontWeight.bold, 
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     Container(
                       margin: const EdgeInsets.symmetric(vertical: 8),
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
@@ -123,7 +149,7 @@ class ProfileTab extends ConsumerWidget {
                         _ProfileMenuItem(
                           icon: Icons.card_membership,
                           label: 'My Subscription',
-                          onTap: () => context.push('/membership/history'),
+                          onTap: () => context.push('/membership/subscriptions'),
                         ),
                         _ProfileMenuItem(
                           icon: Icons.history,
@@ -231,7 +257,7 @@ class ProfileTab extends ConsumerWidget {
                     const SnackBar(content: Text('All test database records cleared successfully!')),
                   );
                   ref.invalidate(upcomingEventsProvider);
-                  ref.invalidate(announcementsStreamProvider);
+
                   ref.invalidate(galleryNotifierProvider);
                 }
               } catch (e) {

@@ -94,6 +94,7 @@ class _UserDashboardState extends ConsumerState<UserDashboard>
         if (!didPop) await _onBackPressed();
       },
       child: Scaffold(
+        drawer: const _AppDrawer(),
         body: AnimatedSwitcher(
           duration: const Duration(milliseconds: 250),
           transitionBuilder: (child, animation) => FadeTransition(
@@ -185,5 +186,102 @@ class _NavItem {
   final IconData icon;
   final IconData activeIcon;
   final String label;
-  const _NavItem({required this.icon, required this.activeIcon, required this.label});
+
+  const _NavItem({
+    required this.icon,
+    required this.activeIcon,
+    required this.label,
+  });
+}
+
+class _AppDrawer extends ConsumerWidget {
+  const _AppDrawer();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Drawer(
+      backgroundColor: const Color(0xFFFAF2E6),
+      child: Column(
+        children: [
+          DrawerHeader(
+            decoration: const BoxDecoration(
+              color: AppColors.primaryMaroon,
+              image: DecorationImage(
+                image: AssetImage('assets/images/home_bg.png'),
+                fit: BoxFit.cover,
+                opacity: 0.3,
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppColors.primaryGold, width: 2),
+                    image: const DecorationImage(
+                      image: AssetImage('assets/images/login_bg.png'),
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'అణు కల్పక్కం\nతెలుగు సమితి',
+                        style: TextStyle(
+                          color: AppColors.primaryGold,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          height: 1.2,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.info_outline, color: AppColors.primaryMaroon),
+            title: const Text('About Us'),
+            onTap: () {
+              Navigator.pop(context);
+              // Handle About Us
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.contact_support_outlined, color: AppColors.primaryMaroon),
+            title: const Text('Contact Us'),
+            onTap: () {
+              Navigator.pop(context);
+              // Handle Contact Us
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.privacy_tip_outlined, color: AppColors.primaryMaroon),
+            title: const Text('Privacy Policy'),
+            onTap: () {
+              Navigator.pop(context);
+              // Handle Privacy Policy
+            },
+          ),
+          const Divider(),
+          const Spacer(),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 24),
+            child: Text(
+              'Version 1.0.0',
+              style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

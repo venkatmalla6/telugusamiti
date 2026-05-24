@@ -18,7 +18,7 @@ class FamilyMembersScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Family Members'),
         backgroundColor: AppColors.primaryMaroon,
-        foregroundColor: Colors.white,
+        foregroundColor: const Color(0xFF5C0A0A),
       ),
       body: familyAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -68,7 +68,7 @@ class FamilyMembersScreen extends ConsumerWidget {
       ),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: AppColors.primaryMaroon,
-        foregroundColor: Colors.white,
+        foregroundColor: const Color(0xFF5C0A0A),
         onPressed: () => context.push('/profile/family/add'),
         icon: const Icon(Icons.add),
         label: const Text('Add Member'),

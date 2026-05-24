@@ -94,7 +94,7 @@ class _QRValidationScreenState extends ConsumerState<QRValidationScreen> {
       appBar: AppBar(
         title: const Text('Validation Result'),
         backgroundColor: AppColors.primaryMaroon,
-        foregroundColor: Colors.white,
+        foregroundColor: const Color(0xFF5C0A0A),
       ),
       body: eventAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -216,11 +216,11 @@ class _QRValidationScreenState extends ConsumerState<QRValidationScreen> {
               FilledButton.icon(
                 onPressed: _isProcessing ? null : () => _markFoodClaimed(reg),
                 icon: _isProcessing 
-                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: const Color(0xFF5C0A0A), strokeWidth: 2))
                   : const Icon(Icons.restaurant),
                 label: const Text('Mark Food Claimed'),
                 style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.primaryGold,
+                  backgroundColor: const Color(0xFF5C0A0A),
                   foregroundColor: Colors.black,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
@@ -240,12 +240,7 @@ class _QRValidationScreenState extends ConsumerState<QRValidationScreen> {
             ),
           ],
           
-          const Spacer(),
-          OutlinedButton(
-            onPressed: () => context.pop(),
-            style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
-            child: const Text('Scan Another QR Code'),
-          ),
+
         ],
       ),
     );

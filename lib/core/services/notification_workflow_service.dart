@@ -2,7 +2,7 @@ import 'dart:developer';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/notification_model.dart';
 import '../../models/event_model.dart';
-import '../../models/announcement_model.dart';
+
 import '../../models/user_model.dart';
 import '../../models/subscription_model.dart';
 import '../../repositories/event_repository.dart';
@@ -76,48 +76,7 @@ class NotificationWorkflowService {
     }
   }
 
-  // --------------------------------------------------------------------------
-  // 2. Announcement Notifications
-  // --------------------------------------------------------------------------
-  /// Writes notification alerts to all users' inboxes when a new announcement is posted.
-  Future<void> sendAnnouncementNotification(AnnouncementModel announcement) async {
-    try {
-      log('[Workflow] Posting announcement notification: ${announcement.title}');
 
-      // Write to each user's inbox
-      final usersSnap = await _db.collection('users').get();
-      final batch = _db.batch();
-
-      for (final userDoc in usersSnap.docs) {
-        final notifRef = _db
-            .collection('users')
-            .doc(userDoc.id)
-            .collection('notifications')
-            .doc();
-
-        final notif = NotificationModel(
-          id: notifRef.id,
-          title: announcement.title,
-          body: announcement.message,
-          createdAt: DateTime.now(),
-          type: NotificationType.announcement,
-          topic: 'announcements',
-          targetUid: userDoc.id,
-          data: {
-            'announcementId': announcement.id,
-            'authorId': announcement.authorId,
-          },
-        );
-        batch.set(notifRef, notif.toMap());
-      }
-
-      await batch.commit();
-      log('[Workflow] Announcement workflow complete, notified ${usersSnap.docs.length} users.');
-    } catch (e) {
-      log('[Workflow] Error in announcement notification: $e');
-      rethrow;
-    }
-  }
 
   // --------------------------------------------------------------------------
   // 3. Event Reminders

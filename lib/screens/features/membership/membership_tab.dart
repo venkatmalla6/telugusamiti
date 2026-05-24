@@ -7,10 +7,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/skeleton_loader.dart';
 import '../../../core/widgets/empty_state_widget.dart';
-import '../../../models/subscription_model.dart';
+import '../../../models/user_model.dart';
 import '../../../providers/auth_provider.dart';
-import '../../../providers/dashboard_providers.dart';
-
 
 class MembershipTab extends ConsumerWidget {
   const MembershipTab({super.key});
@@ -18,12 +16,11 @@ class MembershipTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final userAsync = ref.watch(currentUserProvider);
-    final subAsync = ref.watch(userSubscriptionProvider);
 
     return Scaffold(
       body: RefreshIndicator(
         color: AppColors.primaryMaroon,
-        onRefresh: () async => ref.invalidate(userSubscriptionProvider),
+        onRefresh: () async => ref.invalidate(currentUserProvider),
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
@@ -31,36 +28,34 @@ class MembershipTab extends ConsumerWidget {
               title: Text('Membership'),
               pinned: true,
               backgroundColor: AppColors.primaryMaroon,
-              foregroundColor: Colors.white,
+              foregroundColor: const Color(0xFF5C0A0A),
             ),
             SliverPadding(
               padding: const EdgeInsets.all(16),
               sliver: SliverToBoxAdapter(
                 child: Column(
                   children: [
-                    // Digital ID Card
                     userAsync.when(
                       data: (user) => _DigitalIdCard(
                         name: user?.displayName ?? 'Member',
                         email: user?.email ?? '',
                         role: user?.role.name.toUpperCase() ?? 'USER',
-                        uid: user?.uid ?? '',
+                        uid: (user?.legacyUserId != null && user!.legacyUserId!.isNotEmpty) ? user.legacyUserId! : (user?.uid ?? ''),
                         photoUrl: user?.photoUrl,
-                        subscription: subAsync.value,
+                        membership: user?.membership,
                       ),
                       loading: () => const MembershipSkeleton(),
                       error: (_, __) => const SizedBox.shrink(),
                     ),
                     const SizedBox(height: 24),
-                    // Subscription Info
-                    subAsync.when(
+                    userAsync.when(
                       loading: () => const MembershipSkeleton(),
                       error: (_, __) => const EmptyStateWidget(
                         icon: Icons.error_outline,
                         title: 'Could not load membership',
                         subtitle: 'Pull down to refresh',
                       ),
-                      data: (sub) => _SubscriptionCard(subscription: sub),
+                      data: (user) => _SubscriptionCard(membership: user?.membership),
                     ),
                     const SizedBox(height: 24),
                     _BenefitsList(),
@@ -82,7 +77,7 @@ class _DigitalIdCard extends StatelessWidget {
   final String role;
   final String uid;
   final String? photoUrl;
-  final SubscriptionModel? subscription;
+  final MembershipInfo? membership;
 
   const _DigitalIdCard({
     required this.name,
@@ -90,14 +85,13 @@ class _DigitalIdCard extends StatelessWidget {
     required this.role,
     required this.uid,
     this.photoUrl,
-    this.subscription,
+    this.membership,
   });
 
   @override
   Widget build(BuildContext context) {
-    final hasActiveSub = subscription != null && subscription!.status == SubscriptionStatus.active;
+    final hasActiveSub = membership != null && membership!.renewalDate.isAfter(DateTime.now());
     
-    // Choose theme styling based on plan type
     Gradient gradient;
     Color textColor = Colors.white;
     Color subTextColor = Colors.white70;
@@ -107,7 +101,6 @@ class _DigitalIdCard extends StatelessWidget {
     Border? border;
 
     if (!hasActiveSub) {
-      // Inactive or Expired -> Sleek dark grey/silver card
       gradient = const LinearGradient(
         colors: [Color(0xFF5A5A5A), Color(0xFF2C2C2C)],
         begin: Alignment.topLeft,
@@ -116,51 +109,23 @@ class _DigitalIdCard extends StatelessWidget {
       valueColor = Colors.grey.shade400;
       qrColor = Colors.black;
     } else {
-      final planName = subscription!.planName.toLowerCase();
-      if (planName.contains('lifetime')) {
-        // Lifetime -> Premium Dark Gold theme
-        gradient = const LinearGradient(
-          colors: [Color(0xFF232323), Color(0xFF0F0F0F)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        );
-        border = Border.all(color: AppColors.primaryGold, width: 2);
-        textColor = Colors.white;
-        subTextColor = Colors.grey.shade300;
-        labelColor = Colors.grey.shade400;
-        valueColor = AppColors.primaryGold;
-        qrColor = AppColors.primaryGold;
-      } else if (planName.contains('family')) {
-        // Family -> Maroon theme
-        gradient = const LinearGradient(
-          colors: [Color(0xFF800000), Color(0xFF4A0000)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        );
-        valueColor = AppColors.primaryGold;
-        qrColor = AppColors.primaryMaroon;
-      } else {
-        // Annual -> Rich blue theme
-        gradient = const LinearGradient(
-          colors: [Color(0xFF1565C0), Color(0xFF0D47A1)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        );
-        valueColor = Colors.cyan.shade300;
-        qrColor = const Color(0xFF0D47A1);
-      }
+      gradient = const LinearGradient(
+        colors: [Color(0xFF800000), Color(0xFF4A0000)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      );
+      valueColor = AppColors.primaryGold;
+      qrColor = AppColors.primaryMaroon;
     }
 
-    // Build functional QR Code payload
     final String qrData = 'UID: $uid\n'
         'Name: $name\n'
-        'Plan: ${subscription?.planName ?? "None"}\n'
-        'Status: ${subscription?.status.name.toUpperCase() ?? "INACTIVE"}\n'
-        'Expiry: ${subscription != null ? DateFormat.yMMMd().format(subscription!.endDate) : "N/A"}';
+        'Status: ${hasActiveSub ? "ACTIVE" : "EXPIRED"}\n'
+        'Expiry: ${membership != null ? DateFormat.yMMMd().format(membership!.renewalDate) : "N/A"}';
 
     final String displayPlan = hasActiveSub 
-        ? subscription!.planName.toUpperCase() 
-        : (subscription != null && subscription!.status == SubscriptionStatus.expired)
+        ? 'Premium Member'
+        : (membership != null && membership!.renewalDate.isBefore(DateTime.now()))
             ? 'EXPIRED'
             : role;
 
@@ -171,9 +136,7 @@ class _DigitalIdCard extends StatelessWidget {
         border: border,
         boxShadow: [
           BoxShadow(
-            color: (hasActiveSub && subscription!.planName.toLowerCase().contains('lifetime'))
-                ? AppColors.primaryGold.withValues(alpha: 0.15)
-                : AppColors.primaryMaroon.withValues(alpha: 0.3),
+            color: AppColors.primaryMaroon.withValues(alpha: 0.3),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -192,9 +155,7 @@ class _DigitalIdCard extends StatelessWidget {
                     Text(
                       'Telugu Samiti',
                       style: TextStyle(
-                        color: (hasActiveSub && subscription!.planName.toLowerCase().contains('lifetime'))
-                            ? AppColors.primaryGold
-                            : Colors.white,
+                        color: Colors.white,
                         fontWeight: FontWeight.bold,
                         fontSize: 20,
                         letterSpacing: 1.2,
@@ -212,7 +173,7 @@ class _DigitalIdCard extends StatelessWidget {
                 height: 60,
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: const Color(0xFF5C0A0A),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: QrImageView(
@@ -277,7 +238,7 @@ class _DigitalIdCard extends StatelessWidget {
                 label: 'Member Type',
                 value: displayPlan,
                 labelColor: labelColor,
-                valueColor: (subscription?.status == SubscriptionStatus.expired)
+                valueColor: (!hasActiveSub)
                     ? AppColors.error
                     : valueColor,
               ),
@@ -292,7 +253,7 @@ class _DigitalIdCard extends StatelessWidget {
           if (hasActiveSub) ...[
             const SizedBox(height: 12),
             Text(
-              'Valid Until: ${DateFormat('dd MMM yyyy').format(subscription!.endDate)}',
+              'Valid Until: ${DateFormat('dd MMM yyyy').format(membership!.renewalDate)}',
               style: TextStyle(color: subTextColor, fontSize: 11, fontWeight: FontWeight.bold),
             ),
           ],
@@ -337,12 +298,12 @@ class _CardField extends StatelessWidget {
 
 // ── Subscription Status Card ──────────────────────────────────────────────────
 class _SubscriptionCard extends StatelessWidget {
-  final SubscriptionModel? subscription;
-  const _SubscriptionCard({this.subscription});
+  final MembershipInfo? membership;
+  const _SubscriptionCard({this.membership});
 
   @override
   Widget build(BuildContext context) {
-    if (subscription == null) {
+    if (membership == null) {
       return Card(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Padding(
@@ -360,7 +321,7 @@ class _SubscriptionCard extends StatelessWidget {
               FilledButton(
                 onPressed: () => context.push('/membership/plans'),
                 style: FilledButton.styleFrom(backgroundColor: AppColors.primaryMaroon),
-                child: const Text('Subscribe Now'),
+                child: const Text('Contact Admin to Subscribe'),
               ),
             ],
           ),
@@ -368,8 +329,8 @@ class _SubscriptionCard extends StatelessWidget {
       );
     }
 
-    final isActive = subscription!.status == SubscriptionStatus.active;
-    final daysLeft = subscription!.endDate.difference(DateTime.now()).inDays;
+    final isActive = membership!.renewalDate.isAfter(DateTime.now());
+    final daysLeft = membership!.renewalDate.difference(DateTime.now()).inDays;
 
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -389,12 +350,12 @@ class _SubscriptionCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        subscription!.planName,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      const Text(
+                        'Premium Membership',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                       ),
                       Text(
-                        isActive ? 'Active' : subscription!.status.name.toUpperCase(),
+                        isActive ? 'Active' : 'Expired',
                         style: TextStyle(
                           color: isActive ? AppColors.success : AppColors.error,
                           fontWeight: FontWeight.w600,
@@ -405,7 +366,7 @@ class _SubscriptionCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '₹${subscription!.amount.toStringAsFixed(0)}',
+                  '₹${membership!.amount.toStringAsFixed(0)}',
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 18,
@@ -418,22 +379,11 @@ class _SubscriptionCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _SubDetail('Valid From', DateFormat.yMMMd().format(subscription!.startDate)),
-                _SubDetail('Valid Until', DateFormat.yMMMd().format(subscription!.endDate)),
+                _SubDetail('Payment Date', DateFormat.yMMMd().format(membership!.paymentDate)),
+                _SubDetail('Renewal Date', DateFormat.yMMMd().format(membership!.renewalDate)),
                 if (isActive) _SubDetail('Days Left', '$daysLeft days'),
               ],
             ),
-            if (!isActive) ...[
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: () => context.push('/membership/plans'),
-                  style: FilledButton.styleFrom(backgroundColor: AppColors.primaryMaroon),
-                  child: const Text('Renew Membership'),
-                ),
-              ),
-            ],
           ],
         ),
       ),

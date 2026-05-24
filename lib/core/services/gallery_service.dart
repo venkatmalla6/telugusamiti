@@ -112,6 +112,13 @@ class GalleryService {
     });
   }
 
+  Future<void> updateAlbum(String albumId, String title, String category) async {
+    await _db.collection('gallery_albums').doc(albumId).update({
+      'title': title,
+      'category': category,
+    });
+  }
+
   Future<void> deleteAlbum(String albumId) async {
     // Delete all media docs (firestore does not auto cascade)
     final mediaDocs = await _db.collection('gallery_albums').doc(albumId).collection('media').get();

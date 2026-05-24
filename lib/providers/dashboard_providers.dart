@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/announcement_model.dart';
+
 import '../models/event_model.dart';
 import '../models/subscription_model.dart';
 import '../models/gallery_model.dart';
@@ -13,12 +13,7 @@ import '../repositories/payment_repository.dart';
 import '../core/services/firestore_service.dart';
 import 'auth_provider.dart';
 
-// ── Announcements (real-time stream) ──────────────────────────────────────────
-final announcementsStreamProvider =
-    StreamProvider.autoDispose<List<AnnouncementModel>>((ref) {
-  final repo = ref.watch(communicationRepositoryProvider);
-  return repo.streamAnnouncements();
-});
+
 
 // ── Upcoming Events (next 5 upcoming) ────────────────────────────────────────
 final upcomingEventsProvider =
@@ -115,17 +110,17 @@ class GalleryNotifier extends Notifier<GalleryState> {
     state = state.copyWith(isLoading: true);
     try {
       final snapshot = await _service.getPaginated(
-  limit: 20,
-  orderByField: 'createdAt',
-  descending: true,
-  startAfterDocument: _lastDoc,
-);
-if (snapshot.docs.isNotEmpty) {
-  _lastDoc = snapshot.docs.last;
-  _items.addAll(snapshot.docs.map((d) => d.data()));
-}
-final hasMore = snapshot.docs.length == 20;
-state = GalleryState(items: List.unmodifiable(_items), isLoading: false, hasMore: hasMore);
+        limit: 20,
+        orderByField: 'createdAt',
+        descending: true,
+        startAfterDocument: _lastDoc,
+      );
+      if (snapshot.docs.isNotEmpty) {
+        _lastDoc = snapshot.docs.last;
+        _items.addAll(snapshot.docs.map((d) => d.data()));
+      }
+      final hasMore = snapshot.docs.length == 20;
+      state = GalleryState(items: List.unmodifiable(_items), isLoading: false, hasMore: hasMore);
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
     }

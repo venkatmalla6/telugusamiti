@@ -84,7 +84,7 @@ class _TicketScreenState extends ConsumerState<TicketScreen> {
         title: const Text('Your Ticket'),
         leading: IconButton(
           icon: const Icon(Icons.close),
-          onPressed: () => context.go('/user'), // Go back to dashboard
+          onPressed: () => context.go('/user_dashboard'), // Go back to dashboard
         ),
       ),
       body: Center(
@@ -116,7 +116,7 @@ class _TicketScreenState extends ConsumerState<TicketScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: const Color(0xFF5C0A0A),
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
@@ -133,7 +133,7 @@ class _TicketScreenState extends ConsumerState<TicketScreen> {
                         data: '${widget.eventId}:${widget.registrationId}',
                         version: QrVersions.auto,
                         size: 200.0,
-                        backgroundColor: Colors.white,
+                        backgroundColor: const Color(0xFF5C0A0A),
                       ),
                       const SizedBox(height: 16),
                       Text(
@@ -157,7 +157,7 @@ class _TicketScreenState extends ConsumerState<TicketScreen> {
               FilledButton.icon(
                 onPressed: _isSaving ? null : _saveToGallery,
                 icon: _isSaving 
-                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) 
+                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: const Color(0xFF5C0A0A), strokeWidth: 2)) 
                   : const Icon(Icons.download),
                 label: Text(_isSaving ? 'Saving...' : 'Save to Gallery'),
                 style: FilledButton.styleFrom(

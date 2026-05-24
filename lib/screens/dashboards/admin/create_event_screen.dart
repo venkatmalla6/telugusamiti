@@ -267,7 +267,7 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
                 onPressed: _isLoading ? null : _saveEvent,
                 style: FilledButton.styleFrom(backgroundColor: AppColors.primaryMaroon),
                 child: _isLoading 
-                    ? const CircularProgressIndicator(color: Colors.white)
+                    ? const CircularProgressIndicator(color: const Color(0xFF5C0A0A))
                     : const Text('Save Event'),
               ),
             ),

@@ -61,33 +61,6 @@ class _SkeletonBoxState extends State<SkeletonBox>
   }
 }
 
-/// Skeleton for an announcement card
-class AnnouncementSkeleton extends StatelessWidget {
-  const AnnouncementSkeleton({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
-            SkeletonBox(height: 18, width: 180),
-            SizedBox(height: 8),
-            SkeletonBox(height: 12, width: 100),
-            SizedBox(height: 12),
-            SkeletonBox(height: 14),
-            SizedBox(height: 6),
-            SkeletonBox(height: 14, width: 250),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 /// Skeleton for an event card
 class EventSkeleton extends StatelessWidget {

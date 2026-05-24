@@ -20,7 +20,7 @@ class SuperAdminDashboard extends ConsumerWidget {
             onPressed: () async {
               await ref.read(authControllerProvider).signOut();
               if (context.mounted) {
-                context.go('/welcome');
+                context.go('/login');
               }
             },
           ),
@@ -80,26 +80,13 @@ class SuperAdminDashboard extends ConsumerWidget {
                 mainAxisSpacing: 16,
                 crossAxisSpacing: 16,
                 children: [
-                  _buildDashboardCard(
-                    context,
-                    title: 'Manage Admins',
-                    icon: Icons.admin_panel_settings,
-                    color: Colors.blue,
-                    onTap: () => context.push('/super_admin/manage_admins'),
-                  ),
+
                   _buildDashboardCard(
                     context,
                     title: 'Audit Logs',
                     icon: Icons.history_edu,
                     color: Colors.orange,
                     onTap: () => context.push('/super_admin/audit_logs'),
-                  ),
-                  _buildDashboardCard(
-                    context,
-                    title: 'Org Settings',
-                    icon: Icons.settings,
-                    color: Colors.green,
-                    onTap: () => context.push('/super_admin/settings'),
                   ),
                   _buildDashboardCard(
                     context,
@@ -114,6 +101,27 @@ class SuperAdminDashboard extends ConsumerWidget {
                     icon: Icons.photo_library,
                     color: Colors.teal,
                     onTap: () => context.push('/gallery'),
+                  ),
+                  _buildDashboardCard(
+                    context,
+                    title: 'Membership Upload',
+                    icon: Icons.upload_file,
+                    color: Colors.indigo,
+                    onTap: () => context.push('/super_admin/membership_upload'),
+                  ),
+                  _buildDashboardCard(
+                    context,
+                    title: 'Membership Table',
+                    icon: Icons.table_chart,
+                    color: Colors.blueAccent,
+                    onTap: () => context.push('/super_admin/membership_table'),
+                  ),
+                  _buildDashboardCard(
+                    context,
+                    title: 'Event Registrations',
+                    icon: Icons.event_available,
+                    color: Colors.deepPurple,
+                    onTap: () => context.push('/super_admin/event_registration_logs'),
                   ),
                 ],
               ),
