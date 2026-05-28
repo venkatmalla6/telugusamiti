@@ -153,4 +153,16 @@ class SuperAdminRepository {
       timestamp: DateTime.now(),
     ));
   }
+
+  Future<void> deleteAuditLog(String logId) async {
+    await _firestore.collection('audit_logs').doc(logId).delete();
+  }
+
+  Future<void> deleteMultipleAuditLogs(List<String> logIds) async {
+    final batch = _firestore.batch();
+    for (final id in logIds) {
+      batch.delete(_firestore.collection('audit_logs').doc(id));
+    }
+    await batch.commit();
+  }
 }
